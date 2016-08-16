@@ -1,8 +1,8 @@
 #!/bin/sh
 echo "===== updating local bin..."
 svn update ~/bin
-echo "===== updating clifton..."
-ssh clifton 'svn update ~/bin'
+echo "===== updating blueberry..."
+ssh blueberry 'svn update ~/bin'
 echo "===== updating blueberry..."
 ssh blueberry 'svn update ~/bin'
 echo "===== updating thorgal..."

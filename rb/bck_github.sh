@@ -33,20 +33,20 @@ function f_bitbucket()
     rm -rf $2
 }
 
-function f_clifton()
+function f_blueberry()
 {
-    git clone $1@clifton.ltas.ulg.ac.be:/home/metafor/GIT/$2.git
+    git clone $1@blueberry.ltas.ulg.ac.be:/home/metafor/GIT/$2.git
     tar czf $2-$DATE.tar.gz $2
     rm -rf $2
 }
 
-# deja dans l'archive clifton....
-f_clifton boman MetaforSetup
-f_clifton boman keygen
-f_clifton boman mumps-4.10.0
-f_clifton boman tetgen-1.4.3
-f_clifton boman triangle-1.6
-f_clifton boman parasolid
+# deja dans l'archive blueberry....
+f_blueberry boman MetaforSetup
+f_blueberry boman keygen
+f_blueberry boman mumps-4.10.0
+f_blueberry boman tetgen-1.4.3
+f_blueberry boman triangle-1.6
+f_blueberry boman parasolid
 
 # github public
 f_github rboman math0471    #rboman

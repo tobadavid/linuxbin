@@ -16,7 +16,7 @@
 
 # notes:
 #   config svn (windows): ! repository doit corresp avec le profil putty 
-#   (clifton, pas clifton.ltas.ulg... p expl)
+#   (blueberry, pas blueberry.ltas.ulg... p expl)
 #   [tunnels]
 #   ssh = C:/Program Files/putty/plink.exe
 
