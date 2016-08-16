@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: latin-1; -*-
-# $Id: comp.py 2645 2016-05-12 06:29:38Z boman $
+# $Id: comp.py 2667 2016-06-15 15:16:28Z papeleux $
 
 #
 # Script "comp.py": lancement automatique de la batterie Metafor
@@ -16,7 +16,7 @@
 
 # notes:
 #   config svn (windows): ! repository doit corresp avec le profil putty 
-#   (clifton, pas clifton.ltas.ulg... p expl)
+#   (blueberry, pas blueberry.ltas.ulg... p expl)
 #   [tunnels]
 #   ssh = C:/Program Files/putty/plink.exe
 
@@ -37,8 +37,8 @@ class CompJob(ParametricJob):
         TextPRM(self.pars, 'MAIL_ADDR',  'e-mail address (reports)', os.getenv('USER'))
         TextPRM(self.pars, 'SMTP_SERV',  'SMTP email server',       'smtp.ulg.ac.be')
         TextPRM(self.pars, 'ARC_NAME',   'archive name',            '~/dev.zip')
-        TextPRM(self.pars, 'SVNREP',     'SVN repository',          "svn+ssh://clifton.ltas.ulg.ac.be/home/metafor/SVN")
-        TextPRM(self.pars, 'GITREP',     'GIT repository',          "clifton.ltas.ulg.ac.be:/home/metafor/GIT")        
+        TextPRM(self.pars, 'SVNREP',     'SVN repository',          "svn+ssh://blueberry.ltas.ulg.ac.be/home/metafor/SVN")
+        TextPRM(self.pars, 'GITREP',     'GIT repository',          "blueberry.ltas.ulg.ac.be:/home/metafor/GIT")        
         TextPRM(self.pars, 'SVNBRANCH',  'SVN branch',              "trunk")        
         TextPRM(self.pars, 'BUILD_OPT',  'build options',           "%s.cmake" % socket.gethostbyaddr(socket.gethostname())[0].split('.')[0])
         YesNoPRM(self.pars,'DEBUG_MODE', 'debug mode',              False)
@@ -57,7 +57,7 @@ class CompJob(ParametricJob):
         #TextPRM(self.pars,  'BATCHTIME',    'Batch Start Time', "now")   
         
         YesNoPRM(self.pars, 'HASBACON', 'is bacon present?', True)
-        TextPRM(self.pars,  'ZHOST', 'hostname for bacon', "clifton.ltas.ulg.ac.be")
+        TextPRM(self.pars,  'ZHOST', 'hostname for bacon', "blueberry.ltas.ulg.ac.be")
         TextPRM(self.pars,  'ZUSER', 'username for bacon', getUsername())
         TextPRM(self.pars,  'ZDIR', 'tmp directory', "/home/%s/Tmp/%s" % ( getUsername(), socket.gethostbyaddr(socket.gethostname())[0]))
         TextPRM(self.pars,  'SSH_OPT', 'options for ssh', "-2")
@@ -141,6 +141,11 @@ class CompJob(ParametricJob):
                     cmd = "git clone --quiet %s/%s.git" % (self.pars['GITREP'].val, 
                             module)                     
                 else:
+                    if module == 'linuxbin' : # lpx : patch pas beau temporaire vu que linuxbin n'a pas de "trunk"
+                        print "checking-out %s/%s..." % (module, self.pars['SVNBRANCH'].val)
+                        cmd = "svn co --quiet %s/%s %s" % (self.pars['SVNREP'].val, 
+                              module, module)                
+                    else :
                     print "checking-out %s/%s..." % (module, self.pars['SVNBRANCH'].val)
                     cmd = "svn co --quiet %s/%s/%s %s" % (self.pars['SVNREP'].val, 
                           module, self.pars['SVNBRANCH'].val, module)                

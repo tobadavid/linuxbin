@@ -1,9 +1,9 @@
 #!/bin/bash
-# recupere les repositories SVN metafor, metalub et GIT sur clifton 
+# recupere les repositories SVN metafor, metalub et GIT sur blueberry 
 # pour en faire un backup
 
 CLIENT=`hostname`
-HOST=clifton
+HOST=blueberry
 TMPSCRIPT=`mktemp`
 HERE=`pwd`
 
