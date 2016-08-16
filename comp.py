@@ -145,10 +145,10 @@ class CompJob(ParametricJob):
                         print "checking-out %s/%s..." % (module, self.pars['SVNBRANCH'].val)
                         cmd = "svn co --quiet %s/%s %s" % (self.pars['SVNREP'].val, 
                               module, module)                
-                    else :
-                    print "checking-out %s/%s..." % (module, self.pars['SVNBRANCH'].val)
-                    cmd = "svn co --quiet %s/%s/%s %s" % (self.pars['SVNREP'].val, 
-                          module, self.pars['SVNBRANCH'].val, module)                
+                    else:
+                        print "checking-out %s/%s..." % (module, self.pars['SVNBRANCH'].val)
+                        cmd = "svn co --quiet %s/%s/%s %s" % (self.pars['SVNREP'].val, 
+                            module, self.pars['SVNBRANCH'].val, module)                
                 if self.pars['RUNMETHOD'].val == 'sge' and \
                    self.pars['SGELOCALDISK'].val == True :             
                     cmd = 'ssh %s ". %s; cd %s; %s"' % (self.masterNode, 

@@ -3,8 +3,6 @@ echo "===== updating local bin..."
 svn update ~/bin
 echo "===== updating blueberry..."
 ssh blueberry 'svn update ~/bin'
-echo "===== updating blueberry..."
-ssh blueberry 'svn update ~/bin'
 echo "===== updating thorgal..."
 ssh thorgal 'svn update ~/bin'
 echo "===== updating fabulous..."
