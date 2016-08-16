@@ -1,8 +1,8 @@
 # raccourcis SVN
 
-REP_MT=clifton.ltas.ulg.ac.be/home/metafor/SVN
-REP_MTLUB=clifton.ltas.ulg.ac.be/home/metafor/SVN2
-REP_GIT=clifton.ltas.ulg.ac.be:/home/metafor/GIT
+REP_MT=blueberry.ltas.ulg.ac.be/home/metafor/SVN
+REP_MTLUB=blueberry.ltas.ulg.ac.be/home/metafor/SVN2
+REP_GIT=blueberry.ltas.ulg.ac.be:/home/metafor/GIT
 
 function oo_meta_co
 {
