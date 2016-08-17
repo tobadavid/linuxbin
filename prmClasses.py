@@ -1,8 +1,6 @@
 # -*- coding: latin-1; -*-
-# $Id: prmClasses.py 2645 2016-05-12 06:29:38Z boman $
 #
-#
-# Classe de gestion des parametres
+# Classes de gestion des parametres
 
 
 import sys, os, os.path, shutil, socket, platform, glob, fnmatch
@@ -11,43 +9,47 @@ import datetime, tarfile, subprocess
 try:
     # enable path completion in raw_input()
     import readline
-    readline.set_completer_delims(' \t\n`~!@#$%^&*()-=+[{]}\\|;:\'",<>?') # enleve le "/" qui empeche la completion de repertoires
-    readline.parse_and_bind("tab: complete")    
-#except ImportError:        
-#    import pyreadline as readline    
-#    #readline.set_completer_delims(' \t\n`~!@#$%^&*()-=+[{]}\\|;:\'",<>?') # enleve le "/" qui empeche la completion de repertoires
+    # enleve le "/" qui empeche la completion de repertoires
+    readline.set_completer_delims(' \t\n`~!@#$%^&*()-=+[{]}\\|;:\'",<>?') 
     readline.parse_and_bind("tab: complete")
 except:
     pass  
     
-# Parameters Set
-class PRMSet:
-    def __init__(self,cfgfile, _verb=False):    
-        self.debug = _verb
-        self.pars={}
-        self.actions=[]
-        self.cfgfile=cfgfile
+    
+class PRMSet(object):
+    """ Set of parameters linked to actions
+        This class can also load/save its state from/to disk
+    """
+    def __init__(self, cfgfile, _verb=False):    
+        self.debug   = _verb
+        self.pars    = {}
+        self.actions = []
+        self.cfgfile = cfgfile
         self.setDefaultPars()
         self.loadPars()
  
-    def setDebug(self,_verb = True):
+    def setDebug(self, _verb=True):
         self.debug = _verb      
  
     def printPars(self):
         for k,v in self.pars.items():
-            print ("pars['%s'].val=%s\n" % (k,repr(v.val)) )        
+            print ("pars['%s'].val=%s\n" % (k,repr(v.val)) )
+                   
     def loadPaths(self):
         return [os.path.abspath('.')]
+        
     def savePath(self):
-        return os.path.abspath('.')    
+        return os.path.abspath('.') 
+           
     def savePars(self, pth=None):
-        if pth==None :
+        if pth==None:
             pth  = self.savePath()
         fname = os.path.join(pth, self.cfgfile)
         file = open(fname,"w")        
         for k,v in self.pars.items():
             file.write("self.pars['%s'].val=%s\n" % (k,repr(v.val)) )
-        file.close()            
+        file.close()  
+                  
     def loadPars(self): # lecture dans les chemins par defaut
         for pth in self.loadPaths():      
             fname = os.path.join(pth, self.cfgfile)
@@ -63,7 +65,7 @@ class PRMSet:
                 file.close()
                 break                
             
-    def setDefaultPars(self):
+    def setDefaultPars(self):  # RB: inutile - d'autant plus que ca ne declanche aucune exception
         print "PureVirtual Class PRMSet"
         
     def applyDependencies(self):
@@ -74,7 +76,7 @@ class PRMSet:
         # no actions to configure
         return 
         
-    def menu(self):
+    def menu(self):  # RB: est ce utile?? redefini dans classes derivees...
         msg=""
         while True:
             self.configActions()
@@ -100,27 +102,32 @@ class PRMSet:
             self.applyDependencies()  
             
 # -- Parameters Classes --
-class PRM:
+class PRM(object):
+    """ Base class for a given parameter
+    """
     def __init__(self, set, key, desc, defval):
-        self.key    = key
-        self.desc   = desc
-        self.defval = self.typecheck(defval)
-        self.val    = self.typecheck(defval)
-        set[key]    = self
+        self.key     = key
+        self.desc    = desc
+        self.defval  = self.typecheck(defval)
+        self.val     = self.typecheck(defval)
+        set[key]     = self
         self.enabled = True
-    def typecheck(self, val): pass 
+        
+    def typecheck(self, val): 
+        pass 
+        
     def enable(self, cond):
-        self.enabled = cond  
-    def updateDepend(self): pass
+        self.enabled = cond
         
 class TextPRM(PRM):
     def __init__(self, set, key, desc, defval):
         PRM.__init__(self, set, key, desc, defval)
+        
     def input(self):
         cls()
-        #print "%s [def=%s]:" % (self.desc, self.defval)
+        print "%s [def=%s]:" % (self.desc, self.defval)
         self.val = self.typecheck(raw_input())
-        self.updateDepend()
+        
     def typecheck(self, val):
         if type(val)!=str:
             return ""
@@ -129,9 +136,10 @@ class TextPRM(PRM):
 class YesNoPRM(PRM):
     def __init__(self, set, key, desc, defval):
         PRM.__init__(self, set, key, desc, defval)
+        
     def input(self):
-        self.val = not self.val 
-        self.updateDepend()
+        self.val = not self.val
+        
     def typecheck(self, val):
         if type(val)==bool:
             return val
@@ -144,19 +152,22 @@ class MultiPRM(PRM):
     def __init__(self, set, key, desc, vals, defval):
         self.vals = vals
         PRM.__init__(self, set, key, desc, defval)
+        
     def input(self):
         i = self.vals.index(self.val)
         i = i+1
         if i>=len(self.vals): i=0
         self.val = self.vals[i] 
-        self.updateDepend()
+        
     def typecheck(self, val):
         if val in self.vals:
             return val
         return self.vals[0]
 
+
 # -- Actions Classes (shell interface) --
-class Action:
+
+class Action(object):
     def __init__(self, set, key):
         set.append(self) # add itself to the set
         self.key = key
@@ -213,7 +224,7 @@ class SaveAction(Action):
 
         
 # ----- from http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/134892
-class _Getch:
+class _Getch(object):
     """Gets a single character from standard input.  Does not echo to the
 screen."""
     def __init__(self):
@@ -223,7 +234,8 @@ screen."""
             self.impl = _GetchUnix()
 
     def __call__(self): return self.impl()
-class _GetchUnix:
+    
+class _GetchUnix(object):
     def __init__(self):
         import tty, sys
 
@@ -237,16 +249,20 @@ class _GetchUnix:
         finally:
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
         return ch
-class _GetchWindows:
+        
+class _GetchWindows(object):
     def __init__(self):
         import msvcrt
     def __call__(self):
         import msvcrt
         return msvcrt.getch()
-# -- variables globales --
+        
+# -- variable globale --
 getch = _Getch()
+
 #------------------------------------------------------------------------------  
-# copied from oo_meta/toolbox/pyutils.py    
+
+# copied from oo_meta/toolbox/pyutils.py   
 def isUnix():
     uname = platform.uname()
     return not (uname[0] == 'Windows' or uname[2] == 'Windows')
@@ -263,6 +279,6 @@ def sigbreak(sig, arg):
     print "SIG-BREAK!"
     sys.exit()
 
-def quit():
+def quit():   # RB: ou cette fct est-elle utilisée????
     sys.exit()
                  

@@ -1,15 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: latin-1; -*-
-# $Id: launchGui.pyw 2645 2016-05-12 06:29:38Z boman $
 #
 # GUI de launch.py - version Qt
-#
 
 import os,sys
-#from PyQt4 import QtCore, QtGui
 from prmClassesGui import *
 from launch import *
-
 
 #========================================================================================     
 #========================================================================================     

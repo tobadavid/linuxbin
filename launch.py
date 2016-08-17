@@ -1,16 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: latin-1; -*-
-# $Id: launch.py 2645 2016-05-12 06:29:38Z boman $
-
+#
 # Script "launch.py": aide au lancement d'un job Metafor
-# ======================================================
-# RoBo juin 2007-...
 
-import sys, os, os.path, subprocess, shutil, socket, platform, glob, fnmatch, re
+import sys, os, os.path, subprocess
+import shutil, socket, platform, glob, fnmatch, re
 import datetime, tarfile, signal 
 
 from parametricJob import *
-from subprocess import *
+from subprocess import *   # RB subprocess deja importe + haut??
 
 class LaunchJob(ParametricJob):
     def __init__(self, _jobId=''):
@@ -22,8 +20,8 @@ class LaunchJob(ParametricJob):
         # gestion des dépendances entre paramètres (restart -> no multiple)
         self.applyDependencies()   
         # liens vers launchGui (lorsque lancé par ce biais pour interaction)
-        self.launchGui=None
-        self.outFile=None
+        self.launchGui = None
+        self.outFile   = None
 
     def setLaunchGui(self, launchGui) :
         self.launchGui = launchGui
@@ -34,7 +32,6 @@ class LaunchJob(ParametricJob):
         YesNoPRM(self.pars, 'SEND_MAIL',    'send emails when simulations are over', True)
         TextPRM(self.pars,  'MAIL_ADDR',    'e-mail address (reports)', os.getenv('USER'))
         TextPRM(self.pars,  'SMTP_SERV',    'SMTP email server', 'smtp.ulg.ac.be')
-        
         
         mtfExe = os.path.abspath(os.path.dirname(__file__))+os.sep+'Metafor'
         if (not isUnix()):
@@ -55,7 +52,7 @@ class LaunchJob(ParametricJob):
         TextPRM(self.pars,  'NB_TASKS',     'nb of task launched in parallel', "1")
         TextPRM(self.pars,  'NB_THREADS',   'nb of threads by task', "1")  
         
-        MultiPRM(self.pars, 'RUNMETHOD',    'Run Method', ["interactif", "batch", "sge", "slurm"], "interactif")
+        MultiPRM(self.pars, 'RUNMETHOD',    'Run Method', ["interactive", "batch", "sge", "slurm"], "interactive")
         TextPRM(self.pars,  'SGEARGS',      'additional SGE args', "")
         TextPRM(self.pars,  'SGEQUEUE',     'SGE queue', "lomem.q")   
         YesNoPRM(self.pars, 'SGELOCALDISK', 'SGE run on local disk', True)    
@@ -182,9 +179,9 @@ class LaunchJob(ParametricJob):
     def run(self):
         # write kill scripts        
         if isUnix():
-            if self.pars['RUNMETHOD'].val == 'interactif' or self.pars['RUNMETHOD'].val == 'batch':
+            if self.pars['RUNMETHOD'].val == 'interactive' or self.pars['RUNMETHOD'].val == 'batch':
                 self.killScript(self.jobId, os.getpgrp())
-            elif self.pars['RUNMETHOD'].val == 'sge' and self.pars['SGELOCALDISK'].val == True :
+            elif self.pars['RUNMETHOD'].val == 'sge' and self.pars['SGELOCALDISK'].val == True:
                 self.cpNodeResultsScript(self.jobId)
                 self.rmNodeResultsScript(self.jobId)
         # check exec
@@ -253,7 +250,7 @@ class LaunchJob(ParametricJob):
                 fNames.append("kill%s.py"%self.jobId)   
                 fNames.append("atrm%s.py"%self.jobId)   
                 fNames.append(self.cfgfile)     
-            else :#self.pars['RUNMETHOD'].val == 'interactif'
+            else:
                 fNames.append("kill%s.py"%self.jobId)   
             for fil in fNames:
                 if os.path.isfile(fil):

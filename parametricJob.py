@@ -1,36 +1,21 @@
-#!/usr/bin/env python
 # -*- coding: latin-1; -*-
-# $Id: parametricJob.py 2645 2016-05-12 06:29:38Z boman $
-
-#
-# Script "comp.py": lancement automatique de la batterie Metafor
-# ==============================================================
-# RoBo juin 2007-...
-#
-# conversion a partir du script bash "comp.sh"
-#  new: - possibilité de lancer un checkout sous windows
-#       - utilisation du tar et email python
-#       - utilisation de battery.py pour la creation du rapport html
-#       - tmpdir est créé récursivement si nécessaire (os.makedirs)
-#       - gestion objet du menu.
-
-# notes:
-#   config svn (windows): ! repository doit corresp avec le profil putty 
-#   (blueberry, pas blueberry.ltas.ulg... p expl)
-#   [tunnels]
-#   ssh = C:/Program Files/putty/plink.exe
 
 import sys, os, os.path, shutil, socket, platform, glob, fnmatch
 import datetime, tarfile, subprocess
 from prmClasses import *
 
-# -- Base Class --
+# -- Base Class ----------------------------------------------------------------
+
 class ParametricJob(PRMSet):
     def __init__(self,cfgfile, _verb=False):
         PRMSet.__init__(self, cfgfile, _verb)
-        self.masterNode = '' # parfois nécessaire de garder en mémoire le nom du master node pour lui faire executer des cmd à travers un 'ssh "cmd"'(ex: svn sur fabulous)
+        # parfois nécessaire de garder en mémoire le nom du master node
+        # pour lui faire executer des cmd à travers un 'ssh "cmd"'(ex: svn sur fabulous)
+        self.masterNode = ''
+          
     def setMasterNode(self, mn):
-        self.masterNode = mn           
+        self.masterNode = mn   
+                
     def getNiceCmd(self, niceValue):
         if isUnix():
             niceCmd = ['nice', '-%d'%niceValue]
@@ -46,33 +31,8 @@ class ParametricJob(PRMSet):
             else:
                 prior = '/HIGH'                                        
             niceCmd = ['start', prior, '/B', '/WAIT']        
-        return niceCmd               
+        return niceCmd
 
-    def menu(self):
-        msg=""
-        while True:
-            self.configActions()
-            cls()
-            print "Actions:"
-            for act in self.actions:
-                if act.enabled():
-                    act.disp()
-            print msg.rjust(78)
-            print "Your choice?",  
-            c = getch()
-            #print c,
-            if c!='':
-                acts = [ a for a in self.actions if (a.key==c and a.enabled()) ]
-                if len(acts)==1:
-                    action = acts[0]
-                    action.execute(self)
-                    msg=""
-                elif len(acts)==0:
-                    msg="action is disabled or not found (command='%s')!"%c                    
-                else:
-                    msg= "%d actions found (command='%s')!" % (len(acts),c)
-            self.applyDependencies()  
-                  
     def getMailData(self):
         import re
         fromAddr = "%s@%s" % (os.path.basename(sys.argv[0]), socket.gethostbyaddr(socket.gethostname())[0])        
@@ -81,16 +41,16 @@ class ParametricJob(PRMSet):
             smtpServ = self.pars['SMTP_SERV'].val
         else :
             toAddr = "%s@%s"%(self.pars['MAIL_ADDR'].val,socket.gethostbyaddr(socket.gethostname())[0])
-            smtpServ = "localhost"            
-        print "mailDatas : "
-        print "\tfromAddr = %s"%fromAddr
-        print "\ttoAddr = %s"%toAddr
-        print "\tsmtpServ = %s"%smtpServ
-
+            smtpServ = "localhost"
+        if 0:            
+            print "mailData:"
+            print "\tfromAddr = %s" % fromAddr
+            print "\ttoAddr   = %s" % toAddr
+            print "\tsmtpServ = %s" % smtpServ
         return fromAddr, toAddr, smtpServ
         
     def mailmsg(self, msg="no subject", file=None, text=None):
-        print "mailmsg with subject %s"%msg
+        print 'mailmsg with subject "%s"' % msg
         # getting address & smtp servers
         fromA, toA, smtpServ = self.getMailData()                        
         #subject = "[%s] %s : %s" % (os.path.basename(sys.argv[0]), socket.gethostname(), msg)
@@ -110,7 +70,7 @@ class ParametricJob(PRMSet):
         server.quit()
 
     def mailhtml(self, file, subject):
-        print "mailhtml with subject %s"%subject
+        print 'mailhtml with subject "%s"' % subject
         # getting address & smtp servers
         fromA, toA, smtpServ = self.getMailData()        
         # building email
@@ -131,7 +91,7 @@ class ParametricJob(PRMSet):
         smtp.close()
         
     def mailHtmlAsAttachement(self, fileName, subject):
-        print "mailHtmlAsAttachement with subject %s"%subject
+        print 'mailHtmlAsAttachement with subject "%s"' % subject
         import mimetypes
         from email                import encoders
         from email.mime.multipart import MIMEMultipart
@@ -161,11 +121,11 @@ class ParametricJob(PRMSet):
         maintype, subtype = ctype.split('/', 1)      
         try:
             file = open(fileName,'r')
-            print "file %s correctly opened for mailing"%fileName
+            print "file %s correctly opened for mailing" % fileName
             msg = MIMEBase(maintype, subtype)
             msg.set_payload(file.read())
             file.close()
-            print "file %s correctly closed after mailing"%fileName
+            print "file %s correctly closed after mailing" % fileName
         except smtplib.SMTPException:
             text="file %s not found"%fileName
         # Encode the payload using Base64
@@ -186,20 +146,19 @@ class ParametricJob(PRMSet):
             print "mailHtmlAsAttachement : error during smtp sendmail !!!"
             print "smtplib.SMTPException returned : %s"%e
         
-    def error(self, msg="error",file=None):
+    def error(self, msg="error", file=None):
         print "**ERROR: %s" % msg
         self.mailmsg(msg, file)
         sys.exit(1)
 
     def guessProfile(self):
-        for cfgfile in [os.path.expanduser('~/.profile'),os.path.expanduser('~/.bash_profile')]:
+        for cfgfile in [os.path.expanduser('~/.profile'), os.path.expanduser('~/.bash_profile')]:
             if os.path.isfile(cfgfile):
                 break
         else:
             self.error("bash profiles not found" % file)
         return cfgfile
         
-    # general
     def hasSysCmd(self, cmd):
         import commands
         status, result = commands.getstatusoutput("which %s" % cmd)
@@ -331,7 +290,7 @@ class ParametricJob(PRMSet):
         return "cpNodeResults%s.py"%jobId        
     def rmNodeResultsScriptName(self, jobId):        
         return "rmNodeResults%s.py"%jobId            
-    # cpNodeResultsScript  
+ 
     def cpNodeResultsScript(self, jobId) :
         nodeHost = socket.gethostname()
         filename = self.cpNodeResultsScriptName(jobId)
@@ -356,7 +315,7 @@ class ParametricJob(PRMSet):
         file.write("sys.exit(outCp)")
         file.close()
         os.chmod(filename,0700)
-    # rmNodeResultsScript
+
     def rmNodeResultsScript(self, jobId) :
         nodeHost = socket.gethostname()
         filename = self.rmNodeResultsScriptName(jobId)
@@ -379,7 +338,7 @@ class ParametricJob(PRMSet):
         file.write("sys.exit(outRm)")
         file.close()
         os.chmod(filename,0700)
-    # qdelScript
+
     def qDelScriptName(self, jobId):        
         filename = "qDel%s.py"%jobId
         return filename
@@ -452,7 +411,7 @@ class ParametricJob(PRMSet):
             print "subprocess returned error : ",e
             print "get back result files using %s "%self.cpNodeResultsScriptName(jobId)
     # END OF SGE SPECIFIC    
-    #=======================================================================================
+    #===========================================================================
     # SLURM SPECIFIC INTERFACE
     def runSlurm(self):  
         # get guess profile
@@ -509,7 +468,7 @@ class ParametricJob(PRMSet):
                 print "\tuse ' scancel %s ' to kill your job" % slurmId                
                 print "\tuse ' sacct --format=JobID,NTasks,NCPUS,CPUTime,Elapsed,MaxRSS,MaxVMSize -j %s ' to get information about your finished job (adapt format to your needs)" % slurmId
         sys.exit()
-         # sCancelScript    
+   
     def sCancelScriptName(self, jobId):        
         filename = "sCancel%s.py"%jobId
         return filename
@@ -536,17 +495,18 @@ class ParametricJob(PRMSet):
     def configActions(self):        
         print "configActions : not implemented"  
     def applyDependencies(self):   
-        print "applyDependencies : not implemented"  
+        print "applyDependencies : not implemented"
+          
     def go(self):        
         self.savePars()
         print "go in %s" % self.pars['RUNMETHOD'].val
-        if self.pars['RUNMETHOD'].val == 'batch' :
+        if self.pars['RUNMETHOD'].val == 'batch':
             self.runBatch()
-        elif  self.pars['RUNMETHOD'].val == 'sge' :
+        elif  self.pars['RUNMETHOD'].val == 'sge':
             self.runSGE()
-        elif  self.pars['RUNMETHOD'].val == 'slurm' :
+        elif  self.pars['RUNMETHOD'].val == 'slurm':
             self.runSlurm()
-        else :# if self.pars['RUNMETHOD'].val == 'interactif' :
+        else:
             self.run()      
             
 # fonctions utilitaires pour moveSGELocalDir2Home
@@ -564,6 +524,7 @@ def recCmp(cmp):
         #if not copyOk : faire un break pour limiter le calcul
             #return copyOk
     return copyOk
+    
 def rmCommonFiles(cmp):     
     #print "cmp.left = ", cmp.left
     for subDir in cmp.subdirs :
@@ -587,15 +548,13 @@ def getUsername():
     else:
         return "unknown"
 
-def machineid():                # pars indep
+def machineid():
     uname = platform.uname()
     if uname[0] == 'Windows':
         return "CYGWIN"
     elif uname[0] == 'Linux':
         if uname[4] == 'x86_64':
             return "Linux64"
-        elif uname[4] == 'alpha':
-            return "AlphaLinux"
         else:
             return "Linux"
     else:
