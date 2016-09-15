@@ -31,15 +31,15 @@ function parasolid_co
 
 function linuxbin_co
 {
-  svn co svn+ssh://$USER@$REP_MT/linuxbin linuxbin
+  git clone git@github.com:ulgltas/linuxbin.git
 }
 
 function metafor_co 
 { 
-  svn co svn+ssh://$USER@$REP_MT/linuxbin linuxbin
-  svn co svn+ssh://$USER@$REP_MT/oo_meta/trunk oo_meta
-  svn co svn+ssh://$USER@$REP_MT/oo_nda/trunk oo_nda
-  svn co svn+ssh://$USER@$REP_MINE/keygen/trunk keygen 
+  linuxbin_co
+  oo_meta_co
+  oo_nda_co
+  parasolid_co
 }
 
 
