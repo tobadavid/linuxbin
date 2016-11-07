@@ -9,7 +9,7 @@ def handout(infile):
     if ext!=".pdf":
         raise Exception("file should be a PDF")
     outfile=file+"-handout.pdf"
-    cmd="pdfnup --a4paper --keepinfo --nup 1x2 --frame true --scale 0.92 --no-landscape --outfile %s %s" % (outfile, infile)
+    cmd='pdfnup --a4paper --keepinfo --nup 1x2 --frame true --scale 0.92 --no-landscape --outfile "%s" "%s"' % (outfile, infile)
     print cmd
     os.system(cmd)
 
