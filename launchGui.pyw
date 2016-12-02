@@ -108,7 +108,7 @@ class LaunchGui(QtGui.QWidget):
         self.sf['TEST_DIR']     = PathLine(self, grplay1, self.launch.pars['TEST_DIR'], 2, 0, 4)      
         self.sf['ALGORITHM']    = MultiPMRLine(self, grplay1, self.launch.pars['ALGORITHM'],3,0)
         self.sf['MULTITEST']    = CheckBoxLine(self, grplay1, self.launch.pars['MULTITEST'], 3, 3)
-        self.sf['RESTART_STEP'] = TextLine(self, grplay1, self.launch.pars['RESTART_STEP'], 4, 3, 1, QtGui.QIntValidator(0,100000))
+        self.sf['RESTART_STEP'] = TextLine(self, grplay1, self.launch.pars['RESTART_STEP'], 4, 3, 1, QtGui.QIntValidator(-1,100000))
         self.sf['OUTFILE']      = TextLine(self, grplay1, self.launch.pars['OUTFILE'], 4, 0)
         
         # RUN OPTIONS        
