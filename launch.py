@@ -17,7 +17,7 @@ class LaunchJob(ParametricJob):
         cfgfile="launch%s.cfg"%self.jobId
         ParametricJob.__init__(self, cfgfile)
         self.loadPars()
-        # gestion des dépendances entre paramètres (restart -> no multiple)
+        # gestion des dépendances entre paramètres (restart single => restart step no)
         self.applyDependencies()   
         # liens vers launchGui (lorsque lancé par ce biais pour interaction)
         self.launchGui = None
@@ -29,7 +29,7 @@ class LaunchJob(ParametricJob):
     def setDefaultPars(self):
         if len(self.pars)!=0:
             return
-        YesNoPRM(self.pars, 'SEND_MAIL',    'send emails when simulations are over', True)
+        YesNoPRM(self.pars, 'SEND_MAIL',    'send emails when simulations are over', False)
         TextPRM(self.pars,  'MAIL_ADDR',    'e-mail address (reports)', os.getenv('USER'))
         TextPRM(self.pars,  'SMTP_SERV',    'SMTP email server', 'smtp.ulg.ac.be')
         
@@ -45,7 +45,7 @@ class LaunchJob(ParametricJob):
         YesNoPRM(self.pars, 'MULTITEST',    'Run multiple test on dir', False)
         MultiPRM(self.pars, 'ALGORITHM',    'algorithm', ["meta", "import", "execfile", "clean", "verif", "restart"], "meta")
         
-        TextPRM(self.pars,  'RESTART_STEP', 'restart step', "1515")
+        TextPRM(self.pars,  'RESTART_STEP', 'restart step', "-1")
         
         TextPRM(self.pars,  'NICE_VALUE',   'nice value', "0")     
         TextPRM(self.pars,  'AFFINITY',     'affinity (cores list)', "")    
@@ -126,9 +126,9 @@ class LaunchJob(ParametricJob):
         
         self.pars['TEST_NAME'].enable(self.pars['MULTITEST'].val==False)
         self.pars['TEST_DIR'].enable(self.pars['MULTITEST'].val==True)
-                               
-        self.pars['MULTITEST'].enable(self.pars['ALGORITHM'].val!='restart')    
-        self.pars['RESTART_STEP'].enable(self.pars['ALGORITHM'].val=='restart')   
+                                 
+        self.pars['RESTART_STEP'].enable(self.pars['ALGORITHM'].val=='restart' and
+                                         self.pars['MULTITEST'].val==False)   
         
         self.pars['FTP_HOST'].enable(self.pars['ENABLE_FTP'].val==True)
         self.pars['FTP_PORT'].enable(self.pars['ENABLE_FTP'].val==True)
@@ -204,12 +204,14 @@ class LaunchJob(ParametricJob):
             if not os.path.isfile(self.pars['TEST_NAME'].val) :
                 print "Error : 'TEST_NAME' non existant file"
                 return           
-            #run
-            if (self.pars['ALGORITHM'].val != "restart") :
-                outRun = self.startMultipleTests(self.pars['TEST_NAME'].val)
-            else:
+            #run            
+            outRun = self.startMultipleTests(self.pars['TEST_NAME'].val)
+            '''
+            if (self.pars['ALGORITHM'].val == "restart" && self.pars['RESTART_STEP'].val > 0) :            
                 outRun = self.startSingleTest()
-                
+            else:
+                outRun = self.startMultipleTests(self.pars['TEST_NAME'].val)
+            '''                
         if self.pars['ENABLE_FTP'].val==True:
             #tar facs
             cdir=os.path.basename(os.getcwd())
@@ -331,6 +333,9 @@ class LaunchJob(ParametricJob):
         elif (self.pars['ALGORITHM'].val == "import" ):
             pin.write('battery.addCplxImportPath(r"%s")\n'%tests)       
             print 'battery.cplx_import = [r"%s"]\n'%tests
+        elif (self.pars['ALGORITHM'].val == "restart" ):
+            pin.write('battery.addRestartPath(r"%s")\n'%tests)       
+            print 'battery.restart = [r"%s"]\n'%tests
             
         pin.write('battery.verifsrc  = "verif"\n')
         pin.write('battery.codes = [ "FAILED", "STP", "ITE", "INW", "EXT", "EXW", "LKS", "CPU", "MEM" ]\n')     
@@ -383,7 +388,7 @@ class LaunchJob(ParametricJob):
         if self.pars['SEND_MAIL'].val == True :
             self.mailmsg("multipleTests complete", file=self.getOutFileName())
         return retcode
-        
+'''        
     def startSingleTest(self):
         # affinity/numa stuffs
         affinitycmd=[]
@@ -469,7 +474,7 @@ class LaunchJob(ParametricJob):
         if self.pars['SEND_MAIL'].val == True :
             self.mailmsg("job %s done" % self.pars['TEST_NAME'].val, text=res.getvalue()) 
         res.close()
-
+'''
 if __name__ == "__main__":
 
     from argparse import ArgumentParser
