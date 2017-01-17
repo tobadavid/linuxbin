@@ -60,10 +60,18 @@ class ExtProgs(PRMSet):
             TextPRM(self.pars,  'IMAGEMAGICK', 'Image Magick',  'convert.exe')
             
     def checkValidity(self, key):
+        if key not in self.pars :            
+            print "%s is not a valid external program key from externalProgramPath... "%key
+            print "Solutions : "
+            print "\t 1. Check the key validity (must be in capital letter)."
+            print "\t 2. Update the 'externalProgramPath' Script and rerun the configuration."
+            print "\t 3. If %s not in the Script last version, add it program in the Script..."%key
+            return False
+            
         if distutils.spawn.find_executable(os.path.splitext(self.pars[key].val)[0]) :
             return True
         else :
-            print "%s is not found (%s)...."%self.pars[key].val
+            print "%s is not found in %s ..."%(key, self.pars[key].val)
             print "\t Check installation and accessibility..."        
             print "\t Use 'externalProgramPathGui' to define the full program path (recommanded)" 
             print "\t or add %s in your user path (not recommanded)"%key

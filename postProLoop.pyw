@@ -37,6 +37,9 @@ class PostProLoopGui(QtGui.QWidget):
         #   |  GhostScript :                 |
         #   |       - options                |
         #   |--------------------------------|
+        #   |  Python :                      |
+        #   |       - options                |
+        #   |--------------------------------|
         #   |  Latex :                       |
         #   |       - options                |
         #   |--------------------------------|
@@ -89,7 +92,7 @@ class PostProLoopGui(QtGui.QWidget):
         self.sf['MATLABRUN']       = CheckBoxLine(self, grplay2, self.postProLoop.pars['MATLABRUN'], 0, 0)    
         self.sf['MATLABEXE']       = ExeFileLine (self, grplay2, self.postProLoop.pars['MATLABEXE'], exeFileType, 1, 0, 4)
         self.sf['MATLABCMD']       = TextLine    (self, grplay2, self.postProLoop.pars['MATLABCMD'], 2, 0, 4)   
-        self.sf['MATLABPATH']      = TextLine    (self, grplay2, self.postProLoop.pars['MATLABPATH'], 3, 0, 4)
+        self.sf['MATLABPATH']      = PathLine    (self, grplay2, self.postProLoop.pars['MATLABPATH'], 3, 0, 4)
         self.sf['MATLABREQUEST']   = TextLine    (self, grplay2, self.postProLoop.pars['MATLABREQUEST'], 4, 0, 4)
         
         #GhostScript box
@@ -101,21 +104,34 @@ class PostProLoopGui(QtGui.QWidget):
                     
         self.sf['GSRUN']           = CheckBoxLine(self, grplay3, self.postProLoop.pars['GSRUN'], 0, 0)     
         self.sf['GSEXE']           = ExeFileLine (self, grplay3, self.postProLoop.pars['GSEXE'], exeFileType, 1, 0, 4)
-        self.sf['GSOUTPUTFORMAT']  = MultiPMRLine(self, grplay3, self.postProLoop.pars['GSOUTPUTFORMAT'],2, 0)
-        self.sf['GSDEFINITION']    = TextLine    (self, grplay3, self.postProLoop.pars['GSDEFINITION'], 2, 3, 1, QtGui.QIntValidator(72,1800))
-        self.sf['GSREQUEST']       = TextLine    (self, grplay3, self.postProLoop.pars['GSREQUEST'], 3, 0, 1)
+        self.sf['GSFILTER']        = TextLine    (self, grplay3, self.postProLoop.pars['GSFILTER'], 2, 0, 1)
+        self.sf['GSOUTPUTFORMAT']  = MultiPMRLine(self, grplay3, self.postProLoop.pars['GSOUTPUTFORMAT'],3, 0)
+        self.sf['GSDEFINITION']    = TextLine    (self, grplay3, self.postProLoop.pars['GSDEFINITION'], 3, 3, 1, QtGui.QIntValidator(72,1800))
+        self.sf['GSREQUEST']       = TextLine    (self, grplay3, self.postProLoop.pars['GSREQUEST'], 4, 0, 1)
 
         #build Latex box
-        self.mesherGrpBox  = QtGui.QGroupBox("Latex")
+        self.mesherGrpBox  = QtGui.QGroupBox("Python")
         box.addWidget(self.mesherGrpBox)
         grplay4 = QtGui.QGridLayout()
         grplay4.setColumnStretch(2,1)
         self.mesherGrpBox.setLayout(grplay4)
                     
-        self.sf['LATEXRUN']           = CheckBoxLine(self, grplay4, self.postProLoop.pars['LATEXRUN'], 0, 0)     
-        self.sf['LATEXCMD']           = TextLine    (self, grplay4, self.postProLoop.pars['LATEXCMD'], 1, 0, 4)
-        self.sf['LATEXREQUEST']       = TextLine    (self, grplay4, self.postProLoop.pars['LATEXREQUEST'], 2, 0, 4)
-                
+        self.sf['PYTHONRUN']           = CheckBoxLine(self, grplay4, self.postProLoop.pars['PYTHONRUN'], 0, 0)     
+        self.sf['PYTHONMODULE']        = FileLine    (self, grplay4, self.postProLoop.pars['PYTHONMODULE'], '*.py', 1, 0, 4)
+        self.sf['PYTHONSCRIPT']        = TextLine    (self, grplay4, self.postProLoop.pars['PYTHONSCRIPT'], 2, 0, 4)
+        self.sf['PYTHONREQUEST']       = TextLine    (self, grplay4, self.postProLoop.pars['PYTHONREQUEST'], 3, 0, 4)
+        '''
+        #build Latex box
+        self.mesherGrpBox  = QtGui.QGroupBox("Latex")
+        box.addWidget(self.mesherGrpBox)
+        grplay5 = QtGui.QGridLayout()
+        grplay5.setColumnStretch(2,1)
+        self.mesherGrpBox.setLayout(grplay5)
+                    
+        self.sf['LATEXRUN']           = CheckBoxLine(self, grplay5, self.postProLoop.pars['LATEXRUN'], 0, 0)     
+        self.sf['LATEXCMD']           = TextLine    (self, grplay5, self.postProLoop.pars['LATEXCMD'], 1, 0, 4)
+        self.sf['LATEXREQUEST']       = TextLine    (self, grplay5, self.postProLoop.pars['LATEXREQUEST'], 2, 0, 4)
+        '''        
         
     def buildButtonFrame(self, box):      
         # == Buttons Frame ==
