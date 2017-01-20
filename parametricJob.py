@@ -404,9 +404,9 @@ class ParametricJob(PRMSet):
                 # suppression des scripts   
             else : # on va au moins nettoyer ce qui est commun            
                 print "copie imparfaite => nettoyage de ce qui est commun"
-                os.path.chdir(localNodeDir)
+                os.chdir(localNodeDir)
                 rmCommonFiles(cmp)
-                os.path.chdir(homeDir)                            
+                os.chdir(homeDir)                            
         except OSError, e: #except OSError as e: dont work on blueberry
             print "unable to get back files from local directory"            
             print "subprocess returned error : ",e
@@ -536,7 +536,7 @@ def rmCommonFiles(cmp):
         for f in subDirCmp.common_files:
             print f
             os.remove(f)                    
-        os.path.chdir('..')
+        os.chdir('..')
         if os.path.isempty(subdir):
             os.path.rmdir(subdir)      
                   
