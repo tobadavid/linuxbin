@@ -299,14 +299,12 @@ class ParametricJob(PRMSet):
         homeDir=os.getcwd()
         # write file
         file=open(filename,"w")
-        file.write("#!/usr/bin/env python\n")        
-        sshCpCmd = 'ssh %s "cp -pRvu %s %s"' % (nodeHost, localWSpace, homeDir)         
-        #s="import os; os.system('%s')\n" % sshCpCmd
-        #file.write(s)        
+        file.write("#!/usr/bin/env python\n")
         file.write("import subprocess, sys\n")
         file.write("print 'Copying data from %s local disk started ...'\n"%(nodeHost))
-        file.write("outCp = subprocess.call('ssh %s \"cp -pRvu %s %s\"', shell=True)\n"%
-                   (nodeHost, localWSpace, homeDir))
+        #cpCmd = 'ssh %s \"cp -pRvu %s %s\"' % (nodeHost, localWSpace, homeDir)  
+        file.write("cpCmd = 'rsync -e ssh -abvz --delete-after %s:%s %s'" % (nodeHost, localWSpace, homeDir))
+        file.write("outCp = subprocess.call(cpCmd, shell=True)\n")        
         file.write("if outCp == 0 :\n")
         file.write("\tprint 'Copy of data from %s local disk successfully done'\n"%(nodeHost))
         file.write("else :\n")
@@ -383,7 +381,10 @@ class ParametricJob(PRMSet):
         #shutil.move(localNodeDir,homeDir) # do not work if dst dir exist or it exist => use of "cp -r"!!!
         try: # -R : recursif / p : preserve attribut (owner/mode/timestamp)  / u : update (copy only if source is newer than target)/ v : verbose
             ##cmd1 = "cp -Rpuv %s/* %s"%(localNodeDir, homeDir)
-            cmd1 = "cp -Rpu %s/* %s"%(localNodeDir, homeDir)          
+            #cmd1 = "cp -Rpu %s/* %s"%(localNodeDir, homeDir)          
+            cmd1 = "rsync -abvz --delete-after  %s %s"%(localNodeDir, homeDir)          
+            #--remove-source-files permet de nettoyer la source, mais ca risque de poser problème avec le check ci dessous 
+            # qui plus est, ne supprime pas l'arborescence, juste les fichiers => nettoyage incomplet
             print "cmd1 = ", cmd1
             subprocess.call([cmd1],stderr=subprocess.STDOUT, shell=True) #use of subprocess to be able to catch errors          
             #execfile(self.cpNodeResultsScriptName(jobId))

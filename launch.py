@@ -262,9 +262,9 @@ class LaunchJob(ParametricJob):
     def startMultipleTests(self, tests):  
         print "startMultipleTests"    
         # writing recovery scripts    
-        if self.pars['RUNMETHOD'].val == 'sge' and self.pars['SGELOCALDISK'].val == True :
-            self.cpNodeResultsScript(self.jobId)
-            self.rmNodeResultsScript(self.jobId)
+        #if self.pars['RUNMETHOD'].val == 'sge' and self.pars['SGELOCALDISK'].val == True :
+        #    self.cpNodeResultsScript(self.jobId)
+        #    self.rmNodeResultsScript(self.jobId)
         # starting timer
         now = datetime.datetime.now()
         print "starting Multiple test at %s (come back later)" % now.ctime()
