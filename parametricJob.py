@@ -538,7 +538,7 @@ def rmCommonFiles(cmp):
             os.remove(f)                    
         os.chdir('..')
         if os.path.isempty(subdir):
-            os.path.rmdir(subdir)      
+            os.rmdir(subdir)      
                   
 # -- Misc Utilities --        
 def getUsername():
