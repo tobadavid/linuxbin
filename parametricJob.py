@@ -303,7 +303,8 @@ class ParametricJob(PRMSet):
         file.write("import subprocess, sys\n")
         file.write("print 'Copying data from %s local disk started ...'\n"%(nodeHost))
         #cpCmd = 'ssh %s \"cp -pRvu %s %s\"' % (nodeHost, localWSpace, homeDir)  
-        file.write("cpCmd = 'rsync -e ssh -abvz --delete-after %s:%s %s'" % (nodeHost, localWSpace, homeDir))
+        #file.write("cpCmd = 'rsync -e ssh -avz --delete-after %s:%s %s'" % (nodeHost, localWSpace, homeDir)) # --delete-after supprime les fichiers de la cible (homeDir) ne se trouvant pas dans la source (localNodeDir) après le transfert
+        file.write("cpCmd = 'rsync -e ssh -avz %s:%s %s'\n" % (nodeHost, localWSpace, homeDir))
         file.write("outCp = subprocess.call(cpCmd, shell=True)\n")        
         file.write("if outCp == 0 :\n")
         file.write("\tprint 'Copy of data from %s local disk successfully done'\n"%(nodeHost))
@@ -382,7 +383,8 @@ class ParametricJob(PRMSet):
         try: # -R : recursif / p : preserve attribut (owner/mode/timestamp)  / u : update (copy only if source is newer than target)/ v : verbose
             ##cmd1 = "cp -Rpuv %s/* %s"%(localNodeDir, homeDir)
             #cmd1 = "cp -Rpu %s/* %s"%(localNodeDir, homeDir)          
-            cmd1 = "rsync -abvz --delete-after  %s %s"%(localNodeDir, homeDir)          
+            #cmd1 = "rsync -avz --delete-after  %s/* %s"%(localNodeDir, homeDir)   # --delete-after supprime les fichiers de la cible (homeDir) ne se trouvant pas dans la source (localNodeDir) après le transfert
+            cmd1 = "rsync -avz %s/* %s"%(localNodeDir, homeDir)          
             #--remove-source-files permet de nettoyer la source, mais ca risque de poser problème avec le check ci dessous 
             # qui plus est, ne supprime pas l'arborescence, juste les fichiers => nettoyage incomplet
             print "cmd1 = ", cmd1
@@ -404,9 +406,9 @@ class ParametricJob(PRMSet):
                 # suppression des scripts   
             else : # on va au moins nettoyer ce qui est commun            
                 print "copie imparfaite => nettoyage de ce qui est commun"
-                os.path.chdir(localNodeDir)
+                os.chdir(localNodeDir)
                 rmCommonFiles(cmp)
-                os.path.chdir(homeDir)                            
+                os.chdir(homeDir)                            
         except OSError, e: #except OSError as e: dont work on blueberry
             print "unable to get back files from local directory"            
             print "subprocess returned error : ",e
@@ -528,7 +530,7 @@ def recCmp(cmp):
     
 def rmCommonFiles(cmp):     
     #print "cmp.left = ", cmp.left
-    for subDir in cmp.subdirs :
+    for subdir in cmp.subdirs :
         os.chdir(subdir)
         subDirCmp = cmp.subdirs[subdir]
         rmCommonFiles(subDirCmp)  # recursive function 
@@ -536,9 +538,9 @@ def rmCommonFiles(cmp):
         for f in subDirCmp.common_files:
             print f
             os.remove(f)                    
-        os.path.chdir('..')
+        os.chdir('..')
         if os.path.isempty(subdir):
-            os.path.rmdir(subdir)      
+            os.rmdir(subdir)      
                   
 # -- Misc Utilities --        
 def getUsername():
