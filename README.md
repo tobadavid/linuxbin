@@ -16,3 +16,11 @@ Please, add the following calls to the end of the `~/.bashrc` and `~/.profile` f
 . ~/bin/cfg/loop.sh ; fct_loop bashrc $* ; unset fct_loop
 ```
 
+## Other links
+
+```
+mkdir ~/.subversion
+rm ~/.subversion/config
+ln -s ~/bin/svn/config ~/.subversion/config
+```
+
