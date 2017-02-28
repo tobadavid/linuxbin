@@ -1,5 +1,5 @@
 
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/vtk-5.10.1/lib/vtk-5.10
-export LD_LIBRARY_PATH
-PYTHONPATH=$PYTHON_PATH:/opt/vtk-5.10.1/lib/python2.7/site-packages
-export PYTHONPATH
+#LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/vtk-5.10.1/lib/vtk-5.10
+#export LD_LIBRARY_PATH
+#PYTHONPATH=$PYTHON_PATH:/opt/vtk-5.10.1/lib/python2.7/site-packages
+#export PYTHONPATH
