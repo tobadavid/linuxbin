@@ -1,4 +1,4 @@
-# $id$
+# $Id$
 #
 # configuration to allow CMake to automatically find mumps 
 #

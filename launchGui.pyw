@@ -260,16 +260,16 @@ class LaunchGui(QtGui.QWidget):
         
     # Boucle d'execution du Qprocess avec recuperation des events 
     def waitQProcessForFinish(self):
-            while self.process.waitForFinished(1000):
-                self.app.processEvents()                                
-            self.process.waitForFinished(-1)
-            self.app.processEvents()
+        while self.process.waitForFinished(1000):
+            self.app.processEvents()                                
+        self.process.waitForFinished(-1)
+        self.app.processEvents()
             
-            retcode = self.process.ExitStatus()
+        retcode = self.process.ExitStatus()
         
-            print("Finished: " + str(retcode))            
-            self.process.close()        
-            return retcode                                
+        print("Finished: " + str(retcode))            
+        self.process.close()        
+        return retcode                                
     
     def save(self):     
         print "Save pressed"

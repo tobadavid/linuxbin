@@ -51,8 +51,10 @@ class LaunchJob(ParametricJob):
         TextPRM(self.pars,  'AFFINITY',     'affinity (cores list)', "")    
         TextPRM(self.pars,  'NB_TASKS',     'nb of task launched in parallel', "1")
         TextPRM(self.pars,  'NB_THREADS',   'nb of threads by task', "1")  
-        
-        MultiPRM(self.pars, 'RUNMETHOD',    'Run Method', ["interactive", "batch", "sge", "slurm"], "interactive")
+        if isUnix():
+            MultiPRM(self.pars, 'RUNMETHOD',    'Run Method', ["interactive", "batch", "sge", "slurm"], "interactive")
+        else:
+            MultiPRM(self.pars, 'RUNMETHOD',    'Run Method', ["interactive"], "interactive")            
         TextPRM(self.pars,  'SGEARGS',      'additional SGE args', "")
         TextPRM(self.pars,  'SGEQUEUE',     'SGE queue', "lomem.q")   
         YesNoPRM(self.pars, 'SGELOCALDISK', 'SGE run on local disk', True)    
