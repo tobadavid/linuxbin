@@ -181,6 +181,12 @@ install-sh = svn:eol-style=LF
 *.CPE = svn:eol-style=native;svn:mime-type=text/plain
 *.CRE = svn:eol-style=native;svn:mime-type=text/plain
 *.eps = svn:mime-type=application/postscript
+# *** bacon
+*.fdb = svn:eol-style=native;svn:mime-type=text/plain
+# *** Scilab
+*.sci = svn:eol-style=native;svn:keywords=Id;svn:mime-type=text/plain
+*.sce = svn:eol-style=native;svn:keywords=Id;svn:mime-type=text/plain
+#*** Parasolid
 *.xmt_txt = svn:eol-style=native;svn:mime-type=text/plain
 *.x_t = svn:eol-style=native;svn:mime-type=text/plain
 # *** Misc
