@@ -55,6 +55,7 @@ class LaunchJob(ParametricJob):
             MultiPRM(self.pars, 'RUNMETHOD',    'Run Method', ["interactive", "batch", "sge", "slurm"], "interactive")
         else:
             MultiPRM(self.pars, 'RUNMETHOD',    'Run Method', ["interactive"], "interactive")            
+        TextPRM(self.pars,  'AT_TIME' ,      'Delay for at launch (no syntax check, use with care)', "now")        
         TextPRM(self.pars,  'SGEARGS',      'additional SGE args', "")
         TextPRM(self.pars,  'SGEQUEUE',     'SGE queue', "lomem.q")   
         YesNoPRM(self.pars, 'SGELOCALDISK', 'SGE run on local disk', True)    
@@ -85,6 +86,9 @@ class LaunchJob(ParametricJob):
         PRMAction(self.actions, 'j', self.pars['NB_TASKS'])      
         PRMAction(self.actions, 'k', self.pars['NB_THREADS'])
         PRMAction(self.actions, 'm', self.pars['RUNMETHOD'])
+        # Batch paramters
+        PRMAction(self.actions, 'n', self.pars['AT_TIME'])
+        
         # SGE PARAMETERS
         PRMAction(self.actions, 'n', self.pars['SGEQUEUE'])
         PRMAction(self.actions, 'o', self.pars['SGELOCALDISK'])
@@ -144,6 +148,8 @@ class LaunchJob(ParametricJob):
         self.pars['AFFINITY'].enable(self.pars['RUNMETHOD'].val!='sge' and 
                                      self.pars['RUNMETHOD'].val!='slurm' and 
                                      self.pars['MULTITEST'].val==False)
+        # Batch        
+        self.pars['AT_TIME'].enable(self.pars['RUNMETHOD'].val=='batch')
         # SGE                             
         self.pars['SGEQUEUE'].enable(self.pars['RUNMETHOD'].val=='sge')
         self.pars['SGELOCALDISK'].enable(self.pars['RUNMETHOD'].val=='sge' and

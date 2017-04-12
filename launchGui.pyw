@@ -34,9 +34,10 @@ class LaunchGui(QtGui.QWidget):
         #   |            |  Options :                     |
         #   |            |       - Launch                 |
         #   |            |       - runOptions             |
-        #   |  Console   |       - Email                  |
+        #   |  Console   |       - Batch                  |
         #   |            |       - SGE                    |        
         #   |            |       - FTP                    |        
+        #   |            |       - Email                  |        
         #   |            | Run Buttons                    |
         #   |---------------------------------------------|
         #        
@@ -126,6 +127,15 @@ class LaunchGui(QtGui.QWidget):
         self.sf['AFFINITY']     = TextLine(self, grplay2, self.launch.pars['AFFINITY'], 1, 3, 1)                
         
         self.sf['RUNMETHOD']   = MultiPMRLine(self, grplay2, self.launch.pars['RUNMETHOD'],2,0)
+        # BATCH OPTION
+        
+        self.batchOptGrpBox  = QtGui.QGroupBox("Batch Option")
+        vbox.addWidget(self.batchOptGrpBox)
+        grplay6 = QtGui.QGridLayout()
+        self.batchOptGrpBox.setLayout(grplay6) 
+        grplay6.setColumnStretch(2,1)
+        self.sf['AT_TIME']     = TextLine(self, grplay6, self.launch.pars['AT_TIME'], 0, 0, 1)
+        
         # SGE OPTIONS
         self.sgeOptGrpBox  = QtGui.QGroupBox("Sge Options")
         vbox.addWidget(self.sgeOptGrpBox)

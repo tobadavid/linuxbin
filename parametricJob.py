@@ -181,7 +181,7 @@ class ParametricJob(PRMSet):
         os.chmod(scriptname,0700)
         print "starting script in batch mode : %s" % scriptname
         #shcmd="at %s -f %s" % (self.pars['BATCHTIME'].val, scriptname)
-        shcmd="echo \"/bin/bash %s\" | at now" % (scriptname) # keep it like that else job may start in dash !!!
+        shcmd="echo \"/bin/bash %s\" | at %s" % (scriptname, self.pars['AT_TIME'].val) # keep it like that else job may start in dash !!!
         #shcmd="at now + 1 minutes -f %s" % (scriptname)
         #shcmd="at now %s" % scriptname
         print "shcmd = ", shcmd
