@@ -1,6 +1,6 @@
 # adds Matlab to PATH
 
-if [ -d /opt/MATLAB/R2012b/bin ] ; then
-    PATH=$PATH:/opt/MATLAB/R2012b/bin
+if [ -d /opt/MATLAB/R2016b/bin ] ; then
+    PATH=$PATH:/opt/MATLAB/R2016b/bin
 fi
 
