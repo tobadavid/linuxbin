@@ -1,2 +1,2 @@
 
-add2env PATH "~/dev/progs/bin"
+add2env PATH "$HOME/dev/progs/bin"

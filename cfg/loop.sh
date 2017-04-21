@@ -35,7 +35,11 @@ function add2env()
                 eval export $1="\$$1:$2"  # add folder to the end
             fi
         fi
-    fi   
+    else
+        :  # null command
+        #echo $2 does not exist!
+    fi 
+
 }
 
 function fct_loop()
