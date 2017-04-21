@@ -1,6 +1,4 @@
 
-if [ -d ~/local/eclipse ] ; then
-    PATH=$PATH:~/local/eclipse
-fi
+add2env PATH "$HOME/local/eclipse"
 
 
