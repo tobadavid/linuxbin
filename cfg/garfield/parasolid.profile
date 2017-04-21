@@ -2,23 +2,23 @@
 
 # adds pskernel.so to the PATH
 
-if [ -d ~/local/parasolid-28.1/shared_object ] ; then
+if [ -d ~/local/parasolid/shared_object ] ; then
     if [ -z "${PATH}" ] ; then
-       export PATH="~/local/parasolid-28.1/shared_object"
+       export PATH="~/local/parasolid/shared_object"
     else
-       export PATH="~/local/parasolid-28.1/shared_object:${PATH}"
+       export PATH="~/local/parasolid/shared_object:${PATH}"
     fi
 fi
 
 # adds parasolid INCLUDE dir
 
-if [ -d ~/local/parasolid-28.1 ] ; then
+if [ -d ~/local/parasolid ] ; then
     if [ -z "${INCLUDE}" ] ; then
-       export INCLUDE="~/local/parasolid-28.1"
+       export INCLUDE="~/local/parasolid"
     else
-       export INCLUDE="~/local/parasolid-28.1:${INCLUDE}"
+       export INCLUDE="~/local/parasolid:${INCLUDE}"
     fi
 fi
 
-export P_SCHEMA=~/local/parasolid-28.1/schema
+export P_SCHEMA=~/local/parasolid/schema
 
