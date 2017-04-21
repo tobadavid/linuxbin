@@ -62,6 +62,7 @@ class CompJob(ParametricJob):
         TextPRM(self.pars,  'NB_THREADS',   'nb of threads by task', "1")     
 
         MultiPRM(self.pars, 'RUNMETHOD',    'Run Method', ["interactive", "batch", "sge"], "batch")
+        TextPRM(self.pars,  'AT_TIME' ,     'Delay for at launch (no syntax check, use with care)', "now")    
         TextPRM(self.pars,  'SGEARGS',      'additional SGE args', "")
         TextPRM(self.pars,  'SGEQUEUE',     'SGE queue', "lomem.q")   
         YesNoPRM(self.pars, 'SGELOCALDISK', 'SGE run on local disk', True)
@@ -80,6 +81,9 @@ class CompJob(ParametricJob):
         PRMAction(self.actions, 'k', self.pars['NB_THREADS'])
         
         PRMAction(self.actions, 'm', self.pars['RUNMETHOD'])
+        # Batch paramters
+        PRMAction(self.actions, 'n', self.pars['AT_TIME'])
+        #sge parameters
         PRMAction(self.actions, 'n', self.pars['SGEQUEUE'])
         PRMAction(self.actions, 'o', self.pars['SGELOCALDISK'])
         PRMAction(self.actions, 'p', self.pars['SGEARGS'])
@@ -100,7 +104,10 @@ class CompJob(ParametricJob):
         self.pars['NB_THREADS'].enable(self.pars['COMPILE'].val==True or self.pars['BATTERY'].val!=False)
         self.pars['CMAKELIST'].enable(self.pars['COMPILE'].val==True)
         self.pars['DEBUG_MODE'].enable(self.pars['COMPILE'].val==True)
-        self.pars['NICE_VALUE'].enable(self.pars['BATTERY'].val!=False and self.pars['RUNMETHOD'].val!='sge')
+        self.pars['NICE_VALUE'].enable(self.pars['BATTERY'].val!=False and self.pars['RUNMETHOD'].val!='sge')        
+        # Batch        
+        self.pars['AT_TIME'].enable(self.pars['RUNMETHOD'].val=='batch')
+        # sge
         self.pars['SGEQUEUE'].enable(self.pars['RUNMETHOD'].val=='sge')
         self.pars['SGEARGS'].enable(self.pars['RUNMETHOD'].val=='sge')
         self.pars['SGELOCALDISK'].enable(self.pars['RUNMETHOD'].val=='sge')
