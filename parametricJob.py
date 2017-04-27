@@ -5,7 +5,6 @@ import datetime, tarfile, subprocess
 from prmClasses import *
 
 # -- Base Class ----------------------------------------------------------------
-
 class ParametricJob(PRMSet):
     def __init__(self,cfgfile, _verb=False):
         PRMSet.__init__(self, cfgfile, _verb)
@@ -164,6 +163,102 @@ class ParametricJob(PRMSet):
         status, result = commands.getstatusoutput("which %s" % cmd)
         return status==0
         
+    # Use Local Disk  SPECIFIC (SGE / SLURM)
+    
+    def getLocalDiskDir(self, jobId):
+        return "/local/%s_p%s"%(os.getenv('USER'), jobId)        
+    def cpNodeResultsScriptName(self, jobId):        
+        return "cpNodeResults%s.py"%jobId        
+    def rmNodeResultsScriptName(self, jobId):        
+        return "rmNodeResults%s.py"%jobId            
+ 
+    def cpNodeResultsScript(self, jobId) :
+        nodeHost = socket.gethostname()
+        filename = self.cpNodeResultsScriptName(jobId)
+        localNodeDir = self.getLocalDiskDir(jobId)
+        localWSpace = localNodeDir+os.sep+'*'
+        homeDir=os.getcwd()
+        # write file
+        file=open(filename,"w")
+        file.write("#!/usr/bin/env python\n")
+        file.write("import subprocess, sys\n")
+        file.write("print 'Copying data from %s local disk started ...'\n"%(nodeHost))
+        #cpCmd = 'ssh %s \"cp -pRvu %s %s\"' % (nodeHost, localWSpace, homeDir)  
+        #file.write("cpCmd = 'rsync -e ssh -avz --delete-after %s:%s %s'" % (nodeHost, localWSpace, homeDir)) # --delete-after supprime les fichiers de la cible (homeDir) ne se trouvant pas dans la source (localNodeDir) après le transfert
+        file.write("cpCmd = 'rsync -e ssh -avz %s:%s %s'\n" % (nodeHost, localWSpace, homeDir))
+        file.write("outCp = subprocess.call(cpCmd, shell=True)\n")        
+        file.write("if outCp == 0 :\n")
+        file.write("\tprint 'Copy of data from %s local disk successfully done'\n"%(nodeHost))
+        file.write("else :\n")
+        file.write("\tprint 'Copy of data from %s local disk did NOT succeded.'\n"%(nodeHost))
+        file.write("\tprint 'Check manually what went wrong before cleaning %s local disk'\n"%(nodeHost))       
+        file.write("sys.exit(outCp)")
+        file.close()
+        os.chmod(filename,0700)
+
+    def rmNodeResultsScript(self, jobId) :
+        nodeHost = socket.gethostname()
+        filename = self.rmNodeResultsScriptName(jobId)
+        localNodeDir = self.getLocalDiskDir(jobId)
+        #write file
+        file=open(filename,"w")
+        file.write("#!/usr/bin/env python\n")        
+        #sshRmCmd = 'ssh %s "rm -rf %s"' % (nodeHost, localNodeDir)
+        #s="import os; os.system('%s')\n" % sshRmCmd        
+        #file.write(s)        
+        file.write("import subprocess, sys\n")
+        file.write("print 'Deleting data from %s local disk started ...'\n"%(nodeHost))
+        file.write("outRm = subprocess.call('ssh %s \"rm -rf %s\"', shell=True)\n"%
+                   (nodeHost, localNodeDir))
+        file.write("if outRm == 0 :\n")
+        file.write("\tprint 'Deleting of data from %s local disk successfully done'\n"%(nodeHost))
+        file.write("else :\n")
+        file.write("\tprint 'Deleting of data from %s local disk did NOT succeded.'\n"%(nodeHost))
+        file.write("\tprint 'Check manually how to clean %s local disk'\n"%(nodeHost))       
+        file.write("sys.exit(outRm)")
+        file.close()
+        os.chmod(filename,0700)
+        
+    def moveLocalDir2Home(self, jobId) :
+        localNodeDir = self.getLocalDiskDir(jobId)
+        homeDir=os.getcwd()
+        print "trying to move %s/* to %s"%(localNodeDir,homeDir)
+        #shutil.move(localNodeDir,homeDir) # do not work if dst dir exist or it exist => use of "cp -r"!!!
+        try: # -R : recursif / p : preserve attribut (owner/mode/timestamp)  / u : update (copy only if source is newer than target)/ v : verbose
+            ##cmd1 = "cp -Rpuv %s/* %s"%(localNodeDir, homeDir)
+            #cmd1 = "cp -Rpu %s/* %s"%(localNodeDir, homeDir)          
+            #cmd1 = "rsync -avz --delete-after  %s/* %s"%(localNodeDir, homeDir)   # --delete-after supprime les fichiers de la cible (homeDir) ne se trouvant pas dans la source (localNodeDir) après le transfert
+            cmd1 = "rsync -avz %s/* %s"%(localNodeDir, homeDir)          
+            #--remove-source-files permet de nettoyer la source, mais ca risque de poser problème avec le check ci dessous 
+            # qui plus est, ne supprime pas l'arborescence, juste les fichiers => nettoyage incomplet
+            print "cmd1 = ", cmd1
+            subprocess.call([cmd1],stderr=subprocess.STDOUT, shell=True) #use of subprocess to be able to catch errors          
+            #execfile(self.cpNodeResultsScriptName(jobId))
+            # check que la copie soit bonne (même fichiers des 2 cotés)                        
+            import filecmp
+            cmp = filecmp.dircmp(localNodeDir,homeDir)
+            #print "cmp.report() = ",cmp.report()
+            if recCmp(cmp) : # copie parfaite => nettoyage brutal de l'arborescence
+                print "copie parfaite => nettoyage brutal de l'arborescence "
+                cmd2 = "rm -rf %s"%localNodeDir
+                print "cmd2 = ", cmd2            
+                subprocess.call([cmd2],stderr=subprocess.STDOUT, shell=True) # 2 commands for not deleting files if copy throw an exception 
+                #execfile(self.rmNodeResultsScriptName(jobId))
+                os.remove(self.cpNodeResultsScriptName(jobId))
+                os.remove(self.rmNodeResultsScriptName(jobId))                
+                #os.remove(self.qDelScriptName(jobId))
+                # suppression des scripts   
+            else : # on va au moins nettoyer ce qui est commun            
+                print "copie imparfaite => nettoyage de ce qui est commun"
+                os.chdir(localNodeDir)
+                rmCommonFiles(cmp)
+                os.chdir(homeDir)                            
+        except OSError, e: #except OSError as e: dont work on blueberry
+            print "unable to get back files from local directory"            
+            print "subprocess returned error : ",e
+            print "get back result files using %s "%self.cpNodeResultsScriptName(jobId)
+    # End of Use Local Disk Specific
+    #===========================================================================================================================    
     # BATCH SPECIFIC    
     def runBatch(self):
         # get guess profile
@@ -227,6 +322,7 @@ class ParametricJob(PRMSet):
         file.close()
         os.chmod(filename,0700)
         
+    #===========================================================================================================================    
     # SGE SPECIFIC    
     def runSGE(self):  
         # get guess profile
@@ -277,72 +373,19 @@ class ParametricJob(PRMSet):
             if m:
                 cfgFileName, cfgFileExtension = os.path.splitext(self.cfgfile)
                 os.system("cp %s %s%s%s"%(self.cfgfile, cfgFileName, sgeId, cfgFileExtension))                
-                self.qdelScript(sgeId)
+                self.qDelScript(sgeId)
                 print "\tuse 'qstat -f -j %s' to check the status of your job" % sgeId
                 print "\tuse 'qdel %s' to kill your job" % sgeId
                 print "\tuse './%s' to get results from node disk" % self.cpNodeResultsScriptName(sgeId)
                 print "\tuse './%s' to clean results from node disk" % self.rmNodeResultsScriptName(sgeId)
                 print "\tuse './qDel%s.py' to kill your job, get results and clean node disk" % sgeId            
         sys.exit()
-    def getSGELocalDiskDir(self, jobId):
-        return "/local/%s_p%s"%(os.getenv('USER'), jobId)        
-    def cpNodeResultsScriptName(self, jobId):        
-        return "cpNodeResults%s.py"%jobId        
-    def rmNodeResultsScriptName(self, jobId):        
-        return "rmNodeResults%s.py"%jobId            
- 
-    def cpNodeResultsScript(self, jobId) :
-        nodeHost = socket.gethostname()
-        filename = self.cpNodeResultsScriptName(jobId)
-        localNodeDir = self.getSGELocalDiskDir(jobId)
-        localWSpace = localNodeDir+os.sep+'*'
-        homeDir=os.getcwd()
-        # write file
-        file=open(filename,"w")
-        file.write("#!/usr/bin/env python\n")
-        file.write("import subprocess, sys\n")
-        file.write("print 'Copying data from %s local disk started ...'\n"%(nodeHost))
-        #cpCmd = 'ssh %s \"cp -pRvu %s %s\"' % (nodeHost, localWSpace, homeDir)  
-        #file.write("cpCmd = 'rsync -e ssh -avz --delete-after %s:%s %s'" % (nodeHost, localWSpace, homeDir)) # --delete-after supprime les fichiers de la cible (homeDir) ne se trouvant pas dans la source (localNodeDir) après le transfert
-        file.write("cpCmd = 'rsync -e ssh -avz %s:%s %s'\n" % (nodeHost, localWSpace, homeDir))
-        file.write("outCp = subprocess.call(cpCmd, shell=True)\n")        
-        file.write("if outCp == 0 :\n")
-        file.write("\tprint 'Copy of data from %s local disk successfully done'\n"%(nodeHost))
-        file.write("else :\n")
-        file.write("\tprint 'Copy of data from %s local disk did NOT succeded.'\n"%(nodeHost))
-        file.write("\tprint 'Check manually what went wrong before cleaning %s local disk'\n"%(nodeHost))       
-        file.write("sys.exit(outCp)")
-        file.close()
-        os.chmod(filename,0700)
-
-    def rmNodeResultsScript(self, jobId) :
-        nodeHost = socket.gethostname()
-        filename = self.rmNodeResultsScriptName(jobId)
-        localNodeDir = self.getSGELocalDiskDir(jobId)
-        #write file
-        file=open(filename,"w")
-        file.write("#!/usr/bin/env python\n")        
-        #sshRmCmd = 'ssh %s "rm -rf %s"' % (nodeHost, localNodeDir)
-        #s="import os; os.system('%s')\n" % sshRmCmd        
-        #file.write(s)        
-        file.write("import subprocess, sys\n")
-        file.write("print 'Deleting data from %s local disk started ...'\n"%(nodeHost))
-        file.write("outRm = subprocess.call('ssh %s \"rm -rf %s\"', shell=True)\n"%
-                   (nodeHost, localNodeDir))
-        file.write("if outRm == 0 :\n")
-        file.write("\tprint 'Deleting of data from %s local disk successfully done'\n"%(nodeHost))
-        file.write("else :\n")
-        file.write("\tprint 'Deleting of data from %s local disk did NOT succeded.'\n"%(nodeHost))
-        file.write("\tprint 'Check manually how to clean %s local disk'\n"%(nodeHost))       
-        file.write("sys.exit(outRm)")
-        file.close()
-        os.chmod(filename,0700)
 
     def qDelScriptName(self, jobId):        
         filename = "qDel%s.py"%jobId
         return filename
 
-    def qdelScript(self, jobId):
+    def qQelScript(self, jobId):
         filename = self.qDelScriptName(jobId)
         file=open(filename,"w")
         file.write("#!/usr/bin/env python\n")
@@ -350,7 +393,7 @@ class ParametricJob(PRMSet):
         file.write("subprocess.call('qdel %s',shell=True)\n"%jobId)
         homeDir=os.getcwd()
         nodeHost = socket.gethostname()
-        localNodeDir = self.getSGELocalDiskDir(jobId)
+        localNodeDir = self.getLocalDiskDir(jobId)
         localWSpace = localNodeDir+os.sep+'*'
         file.write("if os.path.isfile('%s'):\n"%(self.cpNodeResultsScriptName(jobId)))
         file.write("\toutCp = subprocess.call('./%s', shell=True)\n"%(self.cpNodeResultsScriptName(jobId)))
@@ -373,47 +416,8 @@ class ParametricJob(PRMSet):
         file.write("os.remove('./%s')\n"%(filename))
         file.write("sys.exit(0)\n")                            
         file.close()
-        os.chmod(filename,0700)            
-                
-    def moveSGELocalDir2Home(self, jobId) :
-        localNodeDir = self.getSGELocalDiskDir(jobId)
-        homeDir=os.getcwd()
-        print "trying to move %s/* to %s"%(localNodeDir,homeDir)
-        #shutil.move(localNodeDir,homeDir) # do not work if dst dir exist or it exist => use of "cp -r"!!!
-        try: # -R : recursif / p : preserve attribut (owner/mode/timestamp)  / u : update (copy only if source is newer than target)/ v : verbose
-            ##cmd1 = "cp -Rpuv %s/* %s"%(localNodeDir, homeDir)
-            #cmd1 = "cp -Rpu %s/* %s"%(localNodeDir, homeDir)          
-            #cmd1 = "rsync -avz --delete-after  %s/* %s"%(localNodeDir, homeDir)   # --delete-after supprime les fichiers de la cible (homeDir) ne se trouvant pas dans la source (localNodeDir) après le transfert
-            cmd1 = "rsync -avz %s/* %s"%(localNodeDir, homeDir)          
-            #--remove-source-files permet de nettoyer la source, mais ca risque de poser problème avec le check ci dessous 
-            # qui plus est, ne supprime pas l'arborescence, juste les fichiers => nettoyage incomplet
-            print "cmd1 = ", cmd1
-            subprocess.call([cmd1],stderr=subprocess.STDOUT, shell=True) #use of subprocess to be able to catch errors          
-            #execfile(self.cpNodeResultsScriptName(jobId))
-            # check que la copie soit bonne (même fichiers des 2 cotés)                        
-            import filecmp
-            cmp = filecmp.dircmp(localNodeDir,homeDir)
-            #print "cmp.report() = ",cmp.report()
-            if recCmp(cmp) : # copie parfaite => nettoyage brutal de l'arborescence
-                print "copie parfaite => nettoyage brutal de l'arborescence "
-                cmd2 = "rm -rf %s"%localNodeDir
-                print "cmd2 = ", cmd2            
-                subprocess.call([cmd2],stderr=subprocess.STDOUT, shell=True) # 2 commands for not deleting files if copy throw an exception 
-                #execfile(self.rmNodeResultsScriptName(jobId))
-                os.remove(self.cpNodeResultsScriptName(jobId))
-                os.remove(self.rmNodeResultsScriptName(jobId))                
-                os.remove(self.qDelScriptName(jobId))
-                # suppression des scripts   
-            else : # on va au moins nettoyer ce qui est commun            
-                print "copie imparfaite => nettoyage de ce qui est commun"
-                os.chdir(localNodeDir)
-                rmCommonFiles(cmp)
-                os.chdir(homeDir)                            
-        except OSError, e: #except OSError as e: dont work on blueberry
-            print "unable to get back files from local directory"            
-            print "subprocess returned error : ",e
-            print "get back result files using %s "%self.cpNodeResultsScriptName(jobId)
-    # END OF SGE SPECIFIC    
+        os.chmod(filename,0700)                            
+    # END OF SGE SPECIFIC 
     #===========================================================================
     # SLURM SPECIFIC INTERFACE
     def runSlurm(self):  
@@ -485,10 +489,9 @@ class ParametricJob(PRMSet):
         file.write("os.remove('./%s')\n"%(filename))
         file.write("sys.exit(0)\n")                            
         file.close()
-        os.chmod(filename,0700)           
-       
+        os.chmod(filename,0700)                  
     # END OF SLURM SPECIFIC INTERFACE
-    
+    #===========================================================================
                 
     # interface virtuelle...
     def run(self, sgeId=0):
@@ -512,7 +515,7 @@ class ParametricJob(PRMSet):
         else:
             self.run()      
             
-# fonctions utilitaires pour moveSGELocalDir2Home
+# fonctions utilitaires pour moveLocalDir2Home
 def recCmp(cmp):         
     copyOk = True
     #print "cmp.left = ", cmp.left

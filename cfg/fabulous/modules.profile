@@ -6,7 +6,7 @@ module load python qt vtk parasolid mumps
 #module load gmm trilinos
 
 module load samcef gmsh 
-#module load samcef isosurf gmsh tetgen triangle
+#module load isosurf tetgen triangle
 module load matlab scilab
 
 
