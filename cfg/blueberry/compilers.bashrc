@@ -4,6 +4,6 @@
 
 #if [ -z "$MKLROOT" ]; then
    #. /opt/intel/bin/compilervars.sh intel64
-    . /opt/intel/bin/iccvars.sh intel64
+    . /opt/intel/bin/iccvars2.sh intel64
 #fi
 
