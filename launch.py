@@ -58,8 +58,7 @@ class LaunchJob(ParametricJob):
         TextPRM(self.pars,  'AT_TIME' ,      'Delay for at launch (no syntax check, use with care)', "now")        
         TextPRM(self.pars,  'SGEARGS',      'additional SGE args', "")
         TextPRM(self.pars,  'SGEQUEUE',     'SGE queue', "lomem.q")   
-        YesNoPRM(self.pars, 'SGELOCALDISK', 'SGE run on local disk', True)    
-        #YesNoPRM(self.pars, 'SLURMLOCALDISK', 'SLURM run on local disk', True)    
+        YesNoPRM(self.pars, 'LOCALDISK',    'Metafor run on node local disk', True)    
         TextPRM(self.pars,  'QUEUE',        'Queue name', "defq")   
         TextPRM(self.pars,  'MEMORY',       'Total Memory (Mb)', "1000")   
         TextPRM(self.pars,  'TIME',         'Time (d-hh:mm:ss) ', "0-1:00:00")   
@@ -91,12 +90,13 @@ class LaunchJob(ParametricJob):
         
         # SGE PARAMETERS
         PRMAction(self.actions, 'n', self.pars['SGEQUEUE'])
-        PRMAction(self.actions, 'o', self.pars['SGELOCALDISK'])
+        PRMAction(self.actions, 'o', self.pars['LOCALDISK'])
         PRMAction(self.actions, 'p', self.pars['SGEARGS'])
         # SLURM PARAMETERS
         PRMAction(self.actions, 'n', self.pars['QUEUE'])
-        PRMAction(self.actions, 'o', self.pars['MEMORY'])
-        PRMAction(self.actions, 'p', self.pars['TIME'])        
+        #PRMAction(self.actions, 'o', self.pars['LOCALDISK'])
+        PRMAction(self.actions, 'p', self.pars['MEMORY'])
+        PRMAction(self.actions, 'q', self.pars['TIME'])        
         # FTP
         PRMAction(self.actions, 'u', self.pars['ENABLE_FTP']) 
         PRMAction(self.actions, 'v', self.pars['FTP_HOST']) 
@@ -152,11 +152,14 @@ class LaunchJob(ParametricJob):
         self.pars['AT_TIME'].enable(self.pars['RUNMETHOD'].val=='batch')
         # SGE                             
         self.pars['SGEQUEUE'].enable(self.pars['RUNMETHOD'].val=='sge')
-        self.pars['SGELOCALDISK'].enable(self.pars['RUNMETHOD'].val=='sge' and
-                                         self.pars['ALGORITHM'].val!='restart' )
+        self.pars['LOCALDISK'].enable((self.pars['RUNMETHOD'].val=='sge' or 
+                                       self.pars['RUNMETHOD'].val=='slurm') and
+                                      self.pars['ALGORITHM'].val!='restart' )
         self.pars['SGEARGS'].enable(self.pars['RUNMETHOD'].val=='sge')        
         # SLURM
         self.pars['QUEUE'].enable(self.pars['RUNMETHOD'].val=='slurm')
+        #self.pars['LOCALDISK'].enable(self.pars['RUNMETHOD'].val=='slurm' and
+        #                              self.pars['ALGORITHM'].val!='restart' )
         self.pars['TIME'].enable(self.pars['RUNMETHOD'].val=='slurm')
         self.pars['MEMORY'].enable(self.pars['RUNMETHOD'].val=='slurm')
         
@@ -189,7 +192,8 @@ class LaunchJob(ParametricJob):
         if isUnix():
             if self.pars['RUNMETHOD'].val == 'interactive' or self.pars['RUNMETHOD'].val == 'batch':
                 self.killScript(self.jobId, os.getpgrp())
-            elif self.pars['RUNMETHOD'].val == 'sge' and self.pars['SGELOCALDISK'].val == True:
+            elif ((self.pars['RUNMETHOD'].val == 'sge' or self.pars['RUNMETHOD'].val == 'slurm') and 
+                  self.pars['LOCALDISK'].val == True) :
                 self.cpNodeResultsScript(self.jobId)
                 self.rmNodeResultsScript(self.jobId)
         # check exec
@@ -269,10 +273,6 @@ class LaunchJob(ParametricJob):
 
     def startMultipleTests(self, tests):  
         print "startMultipleTests"    
-        # writing recovery scripts    
-        #if self.pars['RUNMETHOD'].val == 'sge' and self.pars['SGELOCALDISK'].val == True :
-        #    self.cpNodeResultsScript(self.jobId)
-        #    self.rmNodeResultsScript(self.jobId)
         # starting timer
         now = datetime.datetime.now()
         print "starting Multiple test at %s (come back later)" % now.ctime()
@@ -348,8 +348,9 @@ class LaunchJob(ParametricJob):
         pin.write('battery.verifsrc  = "verif"\n')
         pin.write('battery.codes = [ "FAILED", "STP", "ITE", "INW", "EXT", "EXW", "LKS", "CPU", "MEM" ]\n')     
             
-        if (self.pars['RUNMETHOD'].val == 'sge' and self.pars['SGELOCALDISK'].val == True) :
-            pin.write('battery.setWDRoot("%s")\n'%self.getSGELocalDiskDir(self.jobId))
+        if ((self.pars['RUNMETHOD'].val == 'sge' or self.pars['RUNMETHOD'].val == 'slurm') and 
+                               self.pars['LOCALDISK'].val == True)  :
+            pin.write('battery.setWDRoot("%s")\n'%self.getLocalDiskDir(self.jobId))
             
         if self.pars['RUNMETHOD'].val != 'sge':
             if self.pars['AFFINITY'].val != '' :
@@ -387,9 +388,10 @@ class LaunchJob(ParametricJob):
         self.outFile = None
                 
         # post pro cmd
-        if (self.pars['RUNMETHOD'].val == 'sge' and self.pars['SGELOCALDISK'].val == True) :            
+        if ((self.pars['RUNMETHOD'].val == 'sge' or self.pars['RUNMETHOD'].val == 'slurm') and 
+                  self.pars['LOCALDISK'].val == True) : 
             print "Trying to get back local workspace to home"
-            self.moveSGELocalDir2Home(self.jobId)
+            self.moveLocalDir2Home(self.jobId)
         
         now = datetime.datetime.now()
         print "battery completed at %s" % now.ctime()
@@ -431,11 +433,12 @@ class LaunchJob(ParametricJob):
         cmd = [ self.pars['EXEC_NAME'].val, "-nogui"]
         p = Popen(nicecmd+affinitycmd+cmd, stdout=self.outFile, stderr=self.outFile, stdin=PIPE, env=newenv)     
         
-        if self.pars['RUNMETHOD'].val == 'sge' and self.pars['SGELOCALDISK'].val == True and self.pars['ALGORITHM'].val != "restart":
+        if ((self.pars['RUNMETHOD'].val == 'sge' or self.pars['RUNMETHOD'].val == 'slurm') and 
+             self.pars['LOCALDISK'].val == True and self.pars['ALGORITHM'].val != "restart" :
             # writing recovery scripts and running on local hdd
             self.cpNodeResultsScript(self.jobId)
             self.rmNodeResultsScript(self.jobId)
-            p.stdin.write("setTheWDirRoot('%s')\n" %  self.getSGELocalDiskDir(self.jobId))                
+            p.stdin.write("setTheWDirRoot('%s')\n" %  self.getLocalDiskDir(self.jobId))                
         
         p.stdin.write("setNumTasks(%s)\n"%self.pars['NB_TASKS'].val)
         p.stdin.write("wrap.Blas.setNumThreads(%s)\n"%self.pars['NB_THREADS'].val)
@@ -458,10 +461,11 @@ class LaunchJob(ParametricJob):
         # waiting execution time
         retcode = p.wait()
         # recovering results and removing scripts
-        if self.pars['RUNMETHOD'].val == 'sge' and self.pars['SGELOCALDISK'].val == True and self.pars['ALGORITHM'].val != "restart":
+        if (self.pars['RUNMETHOD'].val == 'sge' or self.pars['RUNMETHOD'].val == 'slurm') and 
+                 self.pars['LOCALDISK'].val == True and self.pars['ALGORITHM'].val != "restart":
             print "Getting back local disk workspace to home disk"
-            self.moveSGELocalDir2Home(self.jobId)
-            if os.path.isdir(self.getSGELocalDiskDir(self.jobId)) : # si la copie a été bien faite => le local dir a été nettoyé => on peut virer les scripts
+            self.moveLocalDir2Home(self.jobId)
+            if os.path.isdir(self.getLocalDiskDir(self.jobId)) : # si la copie a été bien faite => le local dir a été nettoyé => on peut virer les scripts
                 if os.path.isfile(self.cpNodeResultsScriptName(self.jobId)):
                     os.remove(self.cpNodeResultsScriptName(self.jobId))
                 if os.path.isfile(self.rmNodeResultsScriptName(self.jobId)):

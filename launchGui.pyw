@@ -144,7 +144,7 @@ class LaunchGui(QtGui.QWidget):
         grplay4.setColumnStretch(2,1)
         
         self.sf['SGEQUEUE']     = TextLine(self, grplay4, self.launch.pars['SGEQUEUE'], 0, 0, 1)
-        self.sf['SGELOCALDISK'] = CheckBoxLine(self, grplay4, self.launch.pars['SGELOCALDISK'], 0, 3)
+        self.sf['LOCALDISK']    = CheckBoxLine(self, grplay4, self.launch.pars['LOCALDISK'], 0, 3)
         self.sf['SGEARGS']      = TextLine(self, grplay4, self.launch.pars['SGEARGS'], 1, 0, 4)
         
         # FTP OPTIONS

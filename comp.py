@@ -62,9 +62,10 @@ class CompJob(ParametricJob):
         TextPRM(self.pars,  'NB_THREADS',   'nb of threads by task', "1")     
 
         MultiPRM(self.pars, 'RUNMETHOD',    'Run Method', ["interactive", "batch", "sge"], "batch")
+        TextPRM(self.pars,  'AT_TIME' ,     'Delay for at launch (no syntax check, use with care)', "now")    
         TextPRM(self.pars,  'SGEARGS',      'additional SGE args', "")
         TextPRM(self.pars,  'SGEQUEUE',     'SGE queue', "lomem.q")   
-        YesNoPRM(self.pars, 'SGELOCALDISK', 'SGE run on local disk', True)
+        YesNoPRM(self.pars, 'LOCALDISK',    'Metafor run on node local disk', True)
                 
         MultiPRM(self.pars, 'UNZIP',     'source', ["zip", "checkout", "present"], "zip")
         YesNoPRM(self.pars, 'COMPILE',   'compile', True)
@@ -80,8 +81,11 @@ class CompJob(ParametricJob):
         PRMAction(self.actions, 'k', self.pars['NB_THREADS'])
         
         PRMAction(self.actions, 'm', self.pars['RUNMETHOD'])
+        # Batch paramters
+        PRMAction(self.actions, 'n', self.pars['AT_TIME'])
+        #sge parameters
         PRMAction(self.actions, 'n', self.pars['SGEQUEUE'])
-        PRMAction(self.actions, 'o', self.pars['SGELOCALDISK'])
+        PRMAction(self.actions, 'o', self.pars['LOCALDISK'])
         PRMAction(self.actions, 'p', self.pars['SGEARGS'])
                 
         NoAction(self.actions)
@@ -100,10 +104,13 @@ class CompJob(ParametricJob):
         self.pars['NB_THREADS'].enable(self.pars['COMPILE'].val==True or self.pars['BATTERY'].val!=False)
         self.pars['CMAKELIST'].enable(self.pars['COMPILE'].val==True)
         self.pars['DEBUG_MODE'].enable(self.pars['COMPILE'].val==True)
-        self.pars['NICE_VALUE'].enable(self.pars['BATTERY'].val!=False and self.pars['RUNMETHOD'].val!='sge')
+        self.pars['NICE_VALUE'].enable(self.pars['BATTERY'].val!=False and self.pars['RUNMETHOD'].val!='sge')        
+        # Batch        
+        self.pars['AT_TIME'].enable(self.pars['RUNMETHOD'].val=='batch')
+        # sge
         self.pars['SGEQUEUE'].enable(self.pars['RUNMETHOD'].val=='sge')
         self.pars['SGEARGS'].enable(self.pars['RUNMETHOD'].val=='sge')
-        self.pars['SGELOCALDISK'].enable(self.pars['RUNMETHOD'].val=='sge')
+        self.pars['LOCALDISK'].enable(self.pars['RUNMETHOD'].val=='sge')
 
     def touchFiles(self):
         for repo in self.repos:
@@ -119,7 +126,7 @@ class CompJob(ParametricJob):
                 cmd = repo.co_cmd()
                 # embed "cmd" in a ssh call if a cluster local disk is used               
                 if self.pars['RUNMETHOD'].val == 'sge' and \
-                   self.pars['SGELOCALDISK'].val == True :             
+                   self.pars['LOCALDISK'].val == True :             
                     cmd = 'ssh %s ". %s; cd %s; %s"' % (self.masterNode, 
                           self.guessProfile(), os.getcwd(), cmd)                    
                 os.system(cmd)
@@ -213,20 +220,21 @@ class CompJob(ParametricJob):
         now = datetime.datetime.now()
         print "starting battery at %s (come back tomorrow)" % now.ctime()
         os.chdir('oo_metaB/bin')
-        if (self.pars['RUNMETHOD'].val == 'sge' and self.pars['SGELOCALDISK'].val == True):
+        if (self.pars['RUNMETHOD'].val == 'sge' and self.pars['LOCALDISK'].val == True):
             self.cpNodeResultsScript(self.jobId)
             self.rmNodeResultsScript(self.jobId)
             cmd="nice -%s python battery.py -j %s -k %s -wdroot %s >battery.log 2>&1" % (self.pars['NICE_VALUE'].val, self.pars['NB_TASKS'].val, self.pars['NB_THREADS'].val, 
-            self.getSGELocalDiskDir(self.jobId))
+            self.getLocalDiskDir(self.jobId))
         else :
             cmd="nice -%s python battery.py -j %s -k %s >battery.log 2>&1" % (self.pars['NICE_VALUE'].val, self.pars['NB_TASKS'].val, self.pars['NB_THREADS'].val)
         p = subprocess.Popen(cmd, shell=True)
         p.wait()        
         # get results back from local disk
-        if (self.pars['RUNMETHOD'].val == 'sge' and self.pars['SGELOCALDISK'].val == True):            
+        if ((self.pars['RUNMETHOD'].val == 'sge' or self.pars['RUNMETHOD'].val == 'slurm') and 
+                               self.pars['LOCALDISK'].val == True):            
             print "Trying to get back local workspace to home"
-            self.moveSGELocalDir2Home(self.jobId)
-            if not os.path.isdir(self.getSGELocalDiskDir(self.jobId)) : # si la copie a \E9t\E9 bien faite => le local dir a \E9t\E9 nettoy\E9 => on peut virer les scripts
+            self.moveLocalDir2Home(self.jobId)
+            if not os.path.isdir(self.getLocalDiskDir(self.jobId)) : # si la copie a \E9t\E9 bien faite => le local dir a \E9t\E9 nettoy\E9 => on peut virer les scripts
                 if os.path.isfile(self.cpNodeResultsScriptName(self.jobId)):
                     os.remove(self.cpNodeResultsScriptName(self.jobId))
                 if os.path.isfile(self.rmNodeResultsScriptName(self.jobId)):
@@ -241,7 +249,7 @@ class CompJob(ParametricJob):
         os.chdir('oo_metaB/bin')
         print "diff'ing results"
         cmd="python battery.py diff"
-        if self.pars['RUNMETHOD'].val == 'sge' and self.pars['SGELOCALDISK'].val == True:      
+        if self.pars['RUNMETHOD'].val == 'sge' and self.pars['LOCALDISK'].val == True:      
             cmd = 'ssh %s ". %s ; cd %s ; %s "' % (self.masterNode, self.guessProfile(), os.getcwd(), cmd)
         print "checkResults: cmd = %s" % cmd
         os.system(cmd)
