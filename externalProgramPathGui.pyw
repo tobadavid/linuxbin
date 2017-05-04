@@ -1,31 +1,50 @@
 #!/usr/bin/env python
 # -*- coding: latin-1; -*-
-# $Id: externalProgramPathGui.pyw 2384 2015-09-22 10:07:54Z papeleux $
-#
 #
 # Gui to configure externals program path according to local configuration
-# 
-#execfile('.pythonrc.py')
-from PyQt4 import QtCore, QtGui
+
+## Qt ##
+foundQt=0
+try:
+    from PyQt4.QtCore import *
+    from PyQt4.QtGui  import *
+    foundQt=4
+except:
+    pass  
+    
+try:
+    from PyQt5.QtCore    import *
+    from PyQt5.QtGui     import *
+    from PyQt5.QtWidgets import *
+    foundQt=5
+except:
+    pass     
+if not foundQt:
+    raise Exception("PyQt4/5 not found!") 
+print "PyQt%d (Qt %s) loaded!" % (foundQt, QT_VERSION_STR)
+
+
 from externalProgramPath import *
 from prmClassesGui import *
-
 import sys
+
 # avec pythonw : pas de console => les prints sont interdits => redirection des sorties stdout et stderr vers os.devnull !!!
 if (sys.executable.split( '\\' )[-1] == 'pythonw.exe'):
     sys.stdout = open(os.devnull, 'w')
     sys.stderr = open(os.devnull, 'w')
 
-class ExtProgsConfGui(QtGui.QWidget):
-    app = QtGui.QApplication(sys.argv)
+
+class ExtProgsConfGui(QWidget):
+    app = QApplication(sys.argv)
+    
     def __init__(self, parent=None):        
         # parent constructor
-        QtGui.QWidget.__init__(self, parent)
+        QWidget.__init__(self, parent)
         # -----------guis datas ----------------       
         self.guiPRM={}
         self.sf={}
         # ----------- externalProgramPath ----------------       
-        self.extProgPath = ExtProgs(False)
+        self.extProgPath = ExtProgs(verb=False)
         # ---------- draw frames -------------------------------        
         #   |--------------------------------|
         #   |  Applications :                |
@@ -35,7 +54,7 @@ class ExtProgsConfGui(QtGui.QWidget):
         #   |--------------------------------|
         #   |  Buttons                       |
         #   |--------------------------------|
-        mainBox = QtGui.QVBoxLayout()
+        mainBox = QVBoxLayout()
         mainBox.setContentsMargins(2,2,2,2)        
         self.setLayout(mainBox)
         #  Application Frame   
@@ -46,12 +65,12 @@ class ExtProgsConfGui(QtGui.QWidget):
         self.setWindowTitle('External Program Configurator for Metafor')      
         try:
             iconFile = os.path.join(os.path.dirname(os.path.realpath(__file__)), "./Metafor.png")
-            self.setWindowIcon(QtGui.QIcon(iconFile))
+            self.setWindowIcon(QIcon(iconFile))
         except:        
             pass
         
     def buildApplicationFrame(self, box):
-        appFrame = QtGui.QFrame()                            
+        appFrame = QFrame()                            
         box.addWidget(appFrame)                          
         if isUnix():
             exeFileType ="Exe files (*)"
@@ -59,9 +78,9 @@ class ExtProgsConfGui(QtGui.QWidget):
             exeFileType ="Exe files (*.exe)"
         
         #Mesher box
-        self.mesherGrpBox  = QtGui.QGroupBox("Meshers")
+        self.mesherGrpBox  = QGroupBox("Meshers")
         box.addWidget(self.mesherGrpBox)
-        grplay1 = QtGui.QGridLayout()
+        grplay1 = QGridLayout()
         grplay1.setColumnStretch(2,1)
         self.mesherGrpBox.setLayout(grplay1)
         
@@ -76,9 +95,9 @@ class ExtProgsConfGui(QtGui.QWidget):
         self.sf['ISOSURF']     = ExeFileLine(self, grplay1, self.extProgPath.pars['ISOSURF'],  exeFileType, 4, 0, 4)
    
         #CurvePlotter box        
-        self.mesherGrpBox  = QtGui.QGroupBox("Post Pro")
+        self.mesherGrpBox  = QGroupBox("Post Pro")
         box.addWidget(self.mesherGrpBox)
-        grplay2 = QtGui.QGridLayout()
+        grplay2 = QGridLayout()
         grplay2.setColumnStretch(2,1)
         self.mesherGrpBox.setLayout(grplay2)
         self.sf['MATLAB']        = ExeFileLine(self, grplay2, self.extProgPath.pars['MATLAB'],     exeFileType, 0, 0, 4)
@@ -86,9 +105,9 @@ class ExtProgsConfGui(QtGui.QWidget):
         self.sf['GNUPLOT']       = ExeFileLine(self, grplay2, self.extProgPath.pars['GNUPLOT'],    exeFileType, 2, 0, 4)
         
         #Text & image 
-        self.mesherGrpBox  = QtGui.QGroupBox("Text & Image")
+        self.mesherGrpBox  = QGroupBox("Text & Image")
         box.addWidget(self.mesherGrpBox)
-        grplay3 = QtGui.QGridLayout()
+        grplay3 = QGridLayout()
         grplay3.setColumnStretch(2,1)
         self.mesherGrpBox.setLayout(grplay3)
         self.sf['LATEX']             = ExeFileLine(self, grplay3, self.extProgPath.pars['LATEX'],     exeFileType, 0, 0, 4)
@@ -97,23 +116,23 @@ class ExtProgsConfGui(QtGui.QWidget):
         
     def buildButtonFrame(self, box):      
         # == Buttons Frame ==
-        butframe = QtGui.QFrame()
+        butframe = QFrame()
         box.addWidget(butframe)
-        butlayout = QtGui.QHBoxLayout(); 
+        butlayout = QHBoxLayout(); 
         butlayout.setContentsMargins(0,0,0,0)
         butframe.setLayout(butlayout)
         # buttons        
-        self.saveButton1 = QtGui.QPushButton(self.tr("Local User Save")) 
+        self.saveButton1 = QPushButton(self.tr("Local User Save")) 
         butlayout.addWidget(self.saveButton1)
-        self.connect(self.saveButton1, QtCore.SIGNAL("pressed()"), self.userSave)
+        self.saveButton1.pressed.connect(self.userSave)
         
-        self.saveButton2 = QtGui.QPushButton(self.tr("All Users Save")) 
+        self.saveButton2 = QPushButton(self.tr("All Users Save")) 
         butlayout.addWidget(self.saveButton2)
-        self.connect(self.saveButton2, QtCore.SIGNAL("pressed()"), self.progSave)
+        self.saveButton2.pressed.connect(self.progSave)
         
-        self.quitButton = QtGui.QPushButton(self.tr("Quit")) 
+        self.quitButton = QPushButton(self.tr("Quit")) 
         butlayout.addWidget(self.quitButton)
-        self.connect(self.quitButton, QtCore.SIGNAL("pressed()"), self.quit)            
+        self.quitButton.pressed.connect(self.quit)           
                   
     def updateWidgetsValues(self):
         self.extProgPath.applyDependencies()
@@ -136,10 +155,12 @@ class ExtProgsConfGui(QtGui.QWidget):
         self.extProgPath.configActions()
         for var in self.sf:
             self.sf[var].setEnabled(self.extProgPath.pars[var].enabled)       
+            
     def userSave(self):     
         if self.extProgPath.debug :
             print "Save pressed"
-        self.extProgPath.savePars()   
+        self.extProgPath.savePars()  
+         
     def progSave(self):   
         if self.extProgPath.debug :  
             print "Save pressed"
@@ -150,14 +171,16 @@ class ExtProgsConfGui(QtGui.QWidget):
             print "Quit pressed"   
         sys.exit()     
         
-# ============== Main ========================        
+        
+# ============== Main ========================
+     
 def main():    
     # create gui    
     confGui = ExtProgsConfGui()    
     # opening Gui 
     confGui.show()    
     # signal pour cloturer proprement l'application PyQt quand on ferme la fenetre
-    confGui.app.connect(confGui.app, QtCore.SIGNAL("lastWindowClosed()"),confGui.app,QtCore.SLOT("quit()"))
+    confGui.app.lastWindowClosed.connect(confGui.app.quit)
     #print "ready."
     sys.exit(confGui.app.exec_())
     

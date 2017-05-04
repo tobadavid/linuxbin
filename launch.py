@@ -23,7 +23,7 @@ class LaunchJob(ParametricJob):
         self.launchGui = None
         self.outFile   = None
 
-    def setLaunchGui(self, launchGui) :
+    def setLaunchGui(self, launchGui):
         self.launchGui = launchGui
         
     def setDefaultPars(self):
@@ -113,8 +113,8 @@ class LaunchJob(ParametricJob):
         
     def applyDependencies(self):      
         ret = False
-        if self.debug :
-            print "applyDependecies : " 
+        if self.debug:
+            print "applyDependecies: " 
             print "     self.pars['ALGORITHM'].val = ", self.pars['ALGORITHM'].val
         
             
@@ -122,7 +122,7 @@ class LaunchJob(ParametricJob):
             self.pars['MULTITEST'].val = False
             ret = True
             
-        if self.debug :
+        if self.debug:
             print "     self.pars['MULTITEST'].val = ", self.pars['MULTITEST'].val
         return ret
         
@@ -167,9 +167,9 @@ class LaunchJob(ParametricJob):
         #self.pars['TEST_NAME'].val = self.pars['TEST_NAME'].val
     
     def getJobName(self):
-        if (self.pars['MULTITEST'].val==False) :
+        if (self.pars['MULTITEST'].val==False):
             jobname=os.path.basename(os.getcwd())+"."+self.pars['TEST_NAME'].val
-        else :
+        else:
             jobname=os.path.basename(os.getcwd())+"."+self.pars['TEST_DIR'].val
             
         jobname=jobname.replace(os.sep,'.')
@@ -178,11 +178,11 @@ class LaunchJob(ParametricJob):
         jobname=jobname.replace('..','.')
         if jobname.endswith('.'):
             jobname=jobname[:-1]
-        return jobname
+        return jobname.encode('ascii','ignore') # convert to ASCII if some strings were unicode
         
     def getOutFileName(self):
         outFileName  = "%s.%s.txt" % (self.pars['OUTFILE'].val, self.pars['ALGORITHM'].val)                
-        if self.debug :
+        if self.debug:
             print "outFileName = ", outFileName
         return outFileName
                     
@@ -193,7 +193,7 @@ class LaunchJob(ParametricJob):
             if self.pars['RUNMETHOD'].val == 'interactive' or self.pars['RUNMETHOD'].val == 'batch':
                 self.killScript(self.jobId, os.getpgrp())
             elif ((self.pars['RUNMETHOD'].val == 'sge' or self.pars['RUNMETHOD'].val == 'slurm') and 
-                  self.pars['LOCALDISK'].val == True) :
+                  self.pars['LOCALDISK'].val == True):
                 self.cpNodeResultsScript(self.jobId)
                 self.rmNodeResultsScript(self.jobId)
         # check exec
@@ -205,21 +205,23 @@ class LaunchJob(ParametricJob):
             file.close()        
         
         # starts  tests
-        if (self.pars['MULTITEST'].val==True) :                   
+        if (self.pars['MULTITEST'].val==True):                   
             #check 
-            if not os.path.isdir(self.pars['TEST_DIR'].val) :
-                print "Error : 'TEST_DIR' non existant directory"
-                return           
-            outRun = self.startMultipleTests(self.pars['TEST_DIR'].val)
-        else :  
+            if not os.path.isdir(self.pars['TEST_DIR'].val):
+                print "Error: 'TEST_DIR' non existant directory"
+                return
+            asciiname = self.pars['TEST_DIR'].val.encode('ascii','ignore') # convert unicode (from PyQt)
+            outRun = self.startMultipleTests(asciiname)
+        else:  
             #check 
-            if not os.path.isfile(self.pars['TEST_NAME'].val) :
-                print "Error : 'TEST_NAME' non existant file"
+            if not os.path.isfile(self.pars['TEST_NAME'].val):
+                print "Error: 'TEST_NAME' non existant file"
                 return           
-            #run            
-            outRun = self.startMultipleTests(self.pars['TEST_NAME'].val)
+            #run 
+            asciiname = self.pars['TEST_NAME'].val.encode('ascii','ignore') # convert unicode (from PyQt) 
+            outRun = self.startMultipleTests(asciiname)
             '''
-            if (self.pars['ALGORITHM'].val == "restart" && self.pars['RESTART_STEP'].val > 0) :            
+            if (self.pars['ALGORITHM'].val == "restart" && self.pars['RESTART_STEP'].val > 0):            
                 outRun = self.startSingleTest()
             else:
                 outRun = self.startMultipleTests(self.pars['TEST_NAME'].val)
@@ -257,10 +259,10 @@ class LaunchJob(ParametricJob):
             if self.pars['RUNMETHOD'].val == 'sge':
                 fNames.append(self.qDelScriptName(self.jobId))
                 fNames.append(self.cfgfile)
-            elif self.pars['RUNMETHOD'].val == 'slurm' : 
+            elif self.pars['RUNMETHOD'].val == 'slurm': 
                 fNames.append(self.sCancelScriptName(self.jobId))
                 fNames.append(self.cfgfile)     
-            elif self.pars['RUNMETHOD'].val == 'batch' :    
+            elif self.pars['RUNMETHOD'].val == 'batch':    
                 fNames.append("kill%s.py"%self.jobId)   
                 fNames.append("atrm%s.py"%self.jobId)   
                 fNames.append(self.cfgfile)     
@@ -279,10 +281,10 @@ class LaunchJob(ParametricJob):
         
         # opening outfile
         self.outFile   = open(self.getOutFileName(),"w") 
-        mtfdir, mtfexe = os.path.split(self.pars['EXEC_NAME'].val)    
+        mtfdir, mtfexe = os.path.split(self.pars['EXEC_NAME'].val.encode('ascii','ignore'))
         mtfdir = os.path.abspath(mtfdir) # necessaire pour sge sinon, en local disk, soucis pour trouver libGen4.so
         # starting python battery
-        if self.launchGui :                   
+        if self.launchGui:                   
             #self.launchGui.outFile=outfile            
             # starting process (unable to renice it => nice in battery)
             prog = 'python'
@@ -293,13 +295,13 @@ class LaunchJob(ParametricJob):
             self.launchGui.process.waitForStarted(-1)
             # defining the input flux
             pin = self.launchGui.process                           
-        else :    
+        else:    
             #cmd = self.getNiceCmd(int(self.pars['NICE_VALUE'].val))  
             #cmd = cmd + ['python']        
             cmd = ['python']            
             if isUnix(): # shell=False  && sans close_fds = True (ca freeze)
                 #Add mtfdir to LD_LIBRARY_PATH to allow launch to find mt*.so
-                if 'LD_LIBRARY_PATH' in os.environ :
+                if 'LD_LIBRARY_PATH' in os.environ:
                     os.environ['LD_LIBRARY_PATH'] = mtfdir+':'+os.environ['LD_LIBRARY_PATH']
                 else:
                     os.environ['LD_LIBRARY_PATH'] = mtfdir
@@ -312,7 +314,7 @@ class LaunchJob(ParametricJob):
             
         # filling command to battery    
         pin.write('import sys, os, os.path\n')
-        if self.debug :    
+        if self.debug:    
             pin.write('print "sys.path = ", sys.path\n')
             pin.write('print "os.getcwd() = ", os.getcwd()\n')
         #pin.write("raw_input()\n")
@@ -328,7 +330,7 @@ class LaunchJob(ParametricJob):
         pin.write('battery.keepFacs = True\n')
         pin.write('battery.dirs = [r"%s"]\n'%tests)    
         
-        if (self.pars['ALGORITHM'].val == "execfile") :
+        if (self.pars['ALGORITHM'].val == "execfile"):
             reg1=r"(.+)_0*([1-9][0-9]*)\.py"
             exp1= re.compile(reg1)
             m = exp1.match(os.path.basename(tests))
@@ -349,11 +351,11 @@ class LaunchJob(ParametricJob):
         pin.write('battery.codes = [ "FAILED", "STP", "ITE", "INW", "EXT", "EXW", "LKS", "CPU", "MEM" ]\n')     
             
         if ((self.pars['RUNMETHOD'].val == 'sge' or self.pars['RUNMETHOD'].val == 'slurm') and 
-                               self.pars['LOCALDISK'].val == True)  :
+                               self.pars['LOCALDISK'].val == True):
             pin.write('battery.setWDRoot("%s")\n'%self.getLocalDiskDir(self.jobId))
             
         if self.pars['RUNMETHOD'].val != 'sge':
-            if self.pars['AFFINITY'].val != '' :
+            if self.pars['AFFINITY'].val != '':
                 pin.write('battery.setAffinity("%s")\n'%self.pars['AFFINITY'].val)
             if self.pars['NICE_VALUE'].val != '0':
                 #print 'battery.setNice(%s)\n'%self.pars['NICE_VALUE'].val
@@ -362,21 +364,21 @@ class LaunchJob(ParametricJob):
         pin.write('battery.setNumTasks(%s)\n'%self.pars['NB_TASKS'].val)
         pin.write('battery.setNumThreads(%s)\n'%self.pars['NB_THREADS'].val)
         pin.write('battery.mtfdir = r"%s"\n'%mtfdir)
-        if self.pars['ALGORITHM'].val == 'clean' :            
+        if self.pars['ALGORITHM'].val == 'clean':            
             pin.write('battery.start("clean")\n')
-        elif self.pars['ALGORITHM'].val == 'verif' :            
+        elif self.pars['ALGORITHM'].val == 'verif':            
             pin.write('battery.verif()\n')
-        else :
+        else:
             pin.write('battery.start("run")\n')
         #pin.write('battery.verif()\n') # pas très utile dans le cadre de launch ou faudrait faire un verif + malin)
         # write to exit python at the end of job
         pin.write('quit()\n')
         
         # wait for process to finish
-        if self.launchGui :
+        if self.launchGui:
             retcode = self.launchGui.waitQProcessForFinish()
-            #print "Qprocess finished with retcode : ",retcode
-        else :  
+            #print "Qprocess finished with retcode: ",retcode
+        else:  
             #close pin flux
             pin.close()
             # waiting execution time
@@ -389,13 +391,13 @@ class LaunchJob(ParametricJob):
                 
         # post pro cmd
         if ((self.pars['RUNMETHOD'].val == 'sge' or self.pars['RUNMETHOD'].val == 'slurm') and 
-                  self.pars['LOCALDISK'].val == True) : 
+                  self.pars['LOCALDISK'].val == True): 
             print "Trying to get back local workspace to home"
             self.moveLocalDir2Home(self.jobId)
         
         now = datetime.datetime.now()
         print "battery completed at %s" % now.ctime()
-        if self.pars['SEND_MAIL'].val == True :
+        if self.pars['SEND_MAIL'].val == True:
             self.mailmsg("multipleTests complete", file=self.getOutFileName())
         return retcode
 '''        
@@ -465,7 +467,7 @@ class LaunchJob(ParametricJob):
                  self.pars['LOCALDISK'].val == True and self.pars['ALGORITHM'].val != "restart":
             print "Getting back local disk workspace to home disk"
             self.moveLocalDir2Home(self.jobId)
-            if os.path.isdir(self.getLocalDiskDir(self.jobId)) : # si la copie a été bien faite => le local dir a été nettoyé => on peut virer les scripts
+            if os.path.isdir(self.getLocalDiskDir(self.jobId)): # si la copie a été bien faite => le local dir a été nettoyé => on peut virer les scripts
                 if os.path.isfile(self.cpNodeResultsScriptName(self.jobId)):
                     os.remove(self.cpNodeResultsScriptName(self.jobId))
                 if os.path.isfile(self.rmNodeResultsScriptName(self.jobId)):
@@ -483,7 +485,7 @@ class LaunchJob(ParametricJob):
                     if line.find(txt)!=-1:
                         res.write(line)
                         
-        if self.pars['SEND_MAIL'].val == True :
+        if self.pars['SEND_MAIL'].val == True:
             self.mailmsg("job %s done" % self.pars['TEST_NAME'].val, text=res.getvalue()) 
         res.close()
 '''

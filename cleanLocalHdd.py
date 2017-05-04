@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: latin-1; -*-
-# $Id: $
 #
 # Script cleanLocalHdd.py : listing de l'utilisation et nettoyage des disques locaux sur le cluster
 #
@@ -44,9 +43,9 @@ def delByUser(user, nodesList):
         print "\tNode%03d"%(inode)
         cmd  = "ssh node%03d '%s'"%(inode, cmd2)
         callOut =  subprocess.call(cmd, shell=True)
-        
+
+  
 if __name__ == "__main__":
-    
     nbnodes = 14
     nodesList = range(1,nbnodes+1)
     
@@ -62,7 +61,7 @@ if __name__ == "__main__":
     parser.add_option("-c", "--clean", dest="clean",
                       default=False, action="store_true")
     parser.add_option("-n", "--nodes", dest="nodesList", type="int",
-                      action="append", help="number of nodes to check (multiple nodes allowed : -n 1 -n 3 ...)")
+                      action="append", help="number of nodes to check (multiple nodes allowed: -n 1 -n 3 ...)")
 
     
     (options, args) = parser.parse_args()
@@ -72,10 +71,10 @@ if __name__ == "__main__":
        nodesList = options.nodesList
     
     if options.clean == True:
-        if (options.user == '' or not options.nodesList)and options.force==False :
+        if (options.user == '' or not options.nodesList)and options.force==False:
             print "Error deleting for all users or on all nodes not allowed without --force option"
         else:
             delByUser(options.user, nodesList)
-    else :
+    else:
         listByUser(options.user, nodesList)
     

@@ -19,13 +19,13 @@ class ParametricJob(PRMSet):
         if isUnix():
             niceCmd = ['nice', '-%d'%niceValue]
         else:            
-            if niceValue > 14 :
+            if niceValue > 14:
                 prior = '/LOW'
-            elif niceValue > 8 :
+            elif niceValue > 8:
                 prior = '/BELOWNORMAL'
-            elif niceValue > 4 :
+            elif niceValue > 4:
                 prior = '/NORMAL'
-            elif niceValue > 2 :
+            elif niceValue > 2:
                 prior = '/ABOVENORMAL'
             else:
                 prior = '/HIGH'                                        
@@ -36,9 +36,9 @@ class ParametricJob(PRMSet):
         import re
         fromAddr = "%s@%s" % (os.path.basename(sys.argv[0]), socket.gethostbyaddr(socket.gethostname())[0])        
         toAddr   = self.pars['MAIL_ADDR'].val
-        if re.match('(.+)@(.+)',toAddr) :
+        if re.match('(.+)@(.+)',toAddr):
             smtpServ = self.pars['SMTP_SERV'].val
-        else :
+        else:
             toAddr = "%s@%s"%(self.pars['MAIL_ADDR'].val,socket.gethostbyaddr(socket.gethostname())[0])
             smtpServ = "localhost"
         if 0:            
@@ -142,8 +142,8 @@ class ParametricJob(PRMSet):
             smtp.close()
             print "closing smtp"
         except smtplib.SMTPException, e:
-            print "mailHtmlAsAttachement : error during smtp sendmail !!!"
-            print "smtplib.SMTPException returned : %s"%e
+            print "mailHtmlAsAttachement: error during smtp sendmail !!!"
+            print "smtplib.SMTPException returned: %s"%e
         
     def error(self, msg="error", file=None):
         print "**ERROR: %s" % msg
@@ -172,7 +172,7 @@ class ParametricJob(PRMSet):
     def rmNodeResultsScriptName(self, jobId):        
         return "rmNodeResults%s.py"%jobId            
  
-    def cpNodeResultsScript(self, jobId) :
+    def cpNodeResultsScript(self, jobId):
         nodeHost = socket.gethostname()
         filename = self.cpNodeResultsScriptName(jobId)
         localNodeDir = self.getLocalDiskDir(jobId)
@@ -187,16 +187,16 @@ class ParametricJob(PRMSet):
         #file.write("cpCmd = 'rsync -e ssh -avz --delete-after %s:%s %s'" % (nodeHost, localWSpace, homeDir)) # --delete-after supprime les fichiers de la cible (homeDir) ne se trouvant pas dans la source (localNodeDir) après le transfert
         file.write("cpCmd = 'rsync -e ssh -avz %s:%s %s'\n" % (nodeHost, localWSpace, homeDir))
         file.write("outCp = subprocess.call(cpCmd, shell=True)\n")        
-        file.write("if outCp == 0 :\n")
+        file.write("if outCp == 0:\n")
         file.write("\tprint 'Copy of data from %s local disk successfully done'\n"%(nodeHost))
-        file.write("else :\n")
+        file.write("else:\n")
         file.write("\tprint 'Copy of data from %s local disk did NOT succeded.'\n"%(nodeHost))
         file.write("\tprint 'Check manually what went wrong before cleaning %s local disk'\n"%(nodeHost))       
         file.write("sys.exit(outCp)")
         file.close()
         os.chmod(filename,0700)
 
-    def rmNodeResultsScript(self, jobId) :
+    def rmNodeResultsScript(self, jobId):
         nodeHost = socket.gethostname()
         filename = self.rmNodeResultsScriptName(jobId)
         localNodeDir = self.getLocalDiskDir(jobId)
@@ -210,16 +210,16 @@ class ParametricJob(PRMSet):
         file.write("print 'Deleting data from %s local disk started ...'\n"%(nodeHost))
         file.write("outRm = subprocess.call('ssh %s \"rm -rf %s\"', shell=True)\n"%
                    (nodeHost, localNodeDir))
-        file.write("if outRm == 0 :\n")
+        file.write("if outRm == 0:\n")
         file.write("\tprint 'Deleting of data from %s local disk successfully done'\n"%(nodeHost))
-        file.write("else :\n")
+        file.write("else:\n")
         file.write("\tprint 'Deleting of data from %s local disk did NOT succeded.'\n"%(nodeHost))
         file.write("\tprint 'Check manually how to clean %s local disk'\n"%(nodeHost))       
         file.write("sys.exit(outRm)")
         file.close()
         os.chmod(filename,0700)
         
-    def moveLocalDir2Home(self, jobId) :
+    def moveLocalDir2Home(self, jobId):
         localNodeDir = self.getLocalDiskDir(jobId)
         homeDir=os.getcwd()
         print "trying to move %s/* to %s"%(localNodeDir,homeDir)
@@ -238,7 +238,7 @@ class ParametricJob(PRMSet):
             import filecmp
             cmp = filecmp.dircmp(localNodeDir,homeDir)
             #print "cmp.report() = ",cmp.report()
-            if recCmp(cmp) : # copie parfaite => nettoyage brutal de l'arborescence
+            if recCmp(cmp): # copie parfaite => nettoyage brutal de l'arborescence
                 print "copie parfaite => nettoyage brutal de l'arborescence "
                 cmd2 = "rm -rf %s"%localNodeDir
                 print "cmd2 = ", cmd2            
@@ -248,14 +248,14 @@ class ParametricJob(PRMSet):
                 os.remove(self.rmNodeResultsScriptName(jobId))                
                 #os.remove(self.qDelScriptName(jobId))
                 # suppression des scripts   
-            else : # on va au moins nettoyer ce qui est commun            
+            else: # on va au moins nettoyer ce qui est commun            
                 print "copie imparfaite => nettoyage de ce qui est commun"
                 os.chdir(localNodeDir)
                 rmCommonFiles(cmp)
                 os.chdir(homeDir)                            
         except OSError, e: #except OSError as e: dont work on blueberry
             print "unable to get back files from local directory"            
-            print "subprocess returned error : ",e
+            print "subprocess returned error: ",e
             print "get back result files using %s "%self.cpNodeResultsScriptName(jobId)
     # End of Use Local Disk Specific
     #===========================================================================================================================    
@@ -274,7 +274,7 @@ class ParametricJob(PRMSet):
         file.write('%s -x -i $jobId -d "%s"\n' % (sys.argv[0], os.getcwd()) )
         file.close()
         os.chmod(scriptname,0700)
-        print "starting script in batch mode : %s" % scriptname
+        print "starting script in batch mode: %s" % scriptname
         #shcmd="at %s -f %s" % (self.pars['BATCHTIME'].val, scriptname)
         shcmd="echo \"/bin/bash %s\" | at %s" % (scriptname, self.pars['AT_TIME'].val) # keep it like that else job may start in dash !!!
         #shcmd="at now + 1 minutes -f %s" % (scriptname)
@@ -397,21 +397,21 @@ class ParametricJob(PRMSet):
         localWSpace = localNodeDir+os.sep+'*'
         file.write("if os.path.isfile('%s'):\n"%(self.cpNodeResultsScriptName(jobId)))
         file.write("\toutCp = subprocess.call('./%s', shell=True)\n"%(self.cpNodeResultsScriptName(jobId)))
-        file.write("\tif outCp != 0 :\n")        
+        file.write("\tif outCp != 0:\n")        
         file.write("\t\tprint 'Error copying files from node %s'\n"%nodeHost)        
         file.write("\t\tprint '\tget them using %s script '\n"%self.cpNodeResultsScriptName(jobId))
         file.write("\t\tprint '\tthen clean the remote disk using %s script '\n"%self.rmNodeResultsScriptName(jobId))
         file.write("\t\tsys.exit(1)\n")
-        file.write("\telse :\n")     
+        file.write("\telse:\n")     
         file.write("\t\tos.remove('./%s')\n"%(self.cpNodeResultsScriptName(jobId)))                                    
         file.write("if os.path.isfile('%s'):\n"%(self.rmNodeResultsScriptName(jobId)))
         file.write("\toutRm = subprocess.call('./%s', shell=True)\n"%(self.rmNodeResultsScriptName(jobId)))        
-        file.write("\tif outCp != 0 :\n")        
+        file.write("\tif outCp != 0:\n")        
         file.write("\t\tprint 'Error deleting files from node %s'\n"%nodeHost)        
         file.write("\t\tprint '\ttry cleaning them using %s script '\n"%self.rmNodeResultsScriptName(jobId))
         file.write("\t\tprint '\tand only if it do not work, clean disk by hand!!!'\n")    
         file.write("\t\tsys.exit(1)\n")   
-        file.write("\telse :\n")     
+        file.write("\telse:\n")     
         file.write("\t\tos.remove('./%s')\n"%(self.rmNodeResultsScriptName(jobId)))
         file.write("os.remove('./%s')\n"%(filename))
         file.write("sys.exit(0)\n")                            
@@ -519,7 +519,7 @@ class ParametricJob(PRMSet):
 def recCmp(cmp):         
     copyOk = True
     #print "cmp.left = ", cmp.left
-    if len(cmp.left_only) != 0 :# on a des fichiers manquants ou différents
+    if len(cmp.left_only) != 0:# on a des fichiers manquants ou différents
         print "local files only : ", cmp.left_only
         copyOk = False
     if len(cmp.diff_files) != 0: # fichiers differents
@@ -533,7 +533,7 @@ def recCmp(cmp):
     
 def rmCommonFiles(cmp):     
     #print "cmp.left = ", cmp.left
-    for subdir in cmp.subdirs :
+    for subdir in cmp.subdirs:
         os.chdir(subdir)
         subDirCmp = cmp.subdirs[subdir]
         rmCommonFiles(subDirCmp)  # recursive function 

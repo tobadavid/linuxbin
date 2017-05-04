@@ -1,25 +1,23 @@
 #!/usr/bin/env python
 # -*- coding: latin-1; -*-
-# $Id: externalProgramPath.py 2645 2016-05-12 06:29:38Z boman $
 #
-#
-# Define externals program path according to local configuration
-# 
+# Define external program paths according to local configuration
+
 from prmClasses import *
 import os, os.path, distutils.spawn
 
 class ExtProgs(PRMSet):  
-    def __init__(self,_verb=False):                     
+    def __init__(self, verb=False):                     
         fname = 'metaforExtProgs.cfg'
-        PRMSet.__init__(self, fname, _verb)
+        PRMSet.__init__(self, fname, verb)
         
     def __getitem__(self, key):
         return self.pars[key].val
         
     def loadPaths(self):   
         home = os.path.expanduser("~")
-        loc=os.path.abspath('.')
-        return  [home,loc]
+        loc  = os.path.abspath('.')
+        return  [home, loc]
         
     def savePath(self):    
         home = os.path.expanduser("~")
@@ -43,7 +41,7 @@ class ExtProgs(PRMSet):
             TextPRM(self.pars,  'LATEX',       'Latex',          'latex')
             TextPRM(self.pars,  'GHOSTSCRIPT', 'GhostScript',    'gs')
             TextPRM(self.pars,  'IMAGEMAGICK', 'Image Magick',   'convert')            
-        else : # windows
+        else: # windows
             # Mesh generation
             TextPRM(self.pars,  'SAMCEF',      'Samcef',        'samcef.cmd')   
             TextPRM(self.pars,  'GMSH',        'Gmsh',          'gmsh.exe')        
@@ -70,7 +68,7 @@ class ExtProgs(PRMSet):
             
         if distutils.spawn.find_executable(os.path.splitext(self.pars[key].val)[0]) :
             return True
-        else :
+        else:
             print "%s is not found in %s ..."%(key, self.pars[key].val)
             print "\t Check installation and accessibility..."        
             print "\t Use 'externalProgramPathGui' to define the full program path (recommanded)" 
@@ -78,7 +76,6 @@ class ExtProgs(PRMSet):
             return False
         
     def configAction(self):
-        # 
         PRMAction(self.actions, 'a', self.pars['SAMCEF']) 
         PRMAction(self.actions, 'b', self.pars['GMSH']) 
         PRMAction(self.actions, 'c', self.pars['TRIANGLE']) 
@@ -103,7 +100,6 @@ def main():
 
 
 if __name__ == "__main__":
-
     try:
         import signal  
         signal.signal(signal.SIGBREAK, sigbreak);

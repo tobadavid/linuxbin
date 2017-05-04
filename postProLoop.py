@@ -125,9 +125,9 @@ class PostProLoop(PRMSet):
             
     def checkValidity(self, key):
         '''
-        if distutils.spawn.find_executable(os.path.splitext(self.pars[key].val)[0]) :
+        if distutils.spawn.find_executable(os.path.splitext(self.pars[key].val)[0]):
             return True
-        else :
+        else:
             print "%s is not found (%s)...."%self.pars[key].val
             print "\t Check installation and accessibility..."        
             print "\t Use 'externalProgramPathGui' to define the full program path (recommanded)" 
@@ -155,8 +155,8 @@ class PostProLoop(PRMSet):
         os.chdir(wDir)
         # loop on dir 
         ld = glob.glob(self.pars['DIRWILDCARD'].val)
-        for file in ld :
-            if os.path.isdir(file) :
+        for file in ld:
+            if os.path.isdir(file):
                 self.loopOnDirTree(file)
                 
         # finished loop on dir => execute ...
@@ -166,12 +166,12 @@ class PostProLoop(PRMSet):
         os.chdir(oldDir)
         
     def checkRequest(self, request):
-        if len(request) == 0 :
+        if len(request) == 0:
             return True
         elif re.search('\*',request):
-            if len(glob.glob(request)) > 0 :
+            if len(glob.glob(request)) > 0:
                 return True
-        elif os.path.exists(request) :
+        elif os.path.exists(request):
             return True
         else:
             return False
@@ -223,17 +223,17 @@ def execMatlabScript(matlabExe, matlabCmd, mFilePath=None):
         cmd = '"%s" -nodisplay -logfile "%s" -r "%s; quit" > pipo 2>&1' % (matlabExe, moutfile, mCmd)
     else:
         cmd = '"%s"  -automation -noFigureWindows -nodesktop -wait  -logfile "%s" -r "%s; quit"' % (matlabExe, moutfile, mCmd) # work
-    print 'complete Matlab subprocess command : ', cmd
+    print 'complete Matlab subprocess command: ', cmd
 
     # acquire matlock
     matlock.acquire()
-    try :
+    try:
         print "Running Matlab..."                       
         import subprocess  
         matlabProcess = subprocess.call(cmd, shell=True)                
         print "Running Matlab... Done" 
         a = 1.0
-    except :
+    except:
         # fonction objectif doit retourner un double
         print "problem during matlab run"
         a = 0.0        
@@ -249,15 +249,15 @@ def execGhostScript(gsExe, inFilter = '*.eps', device='png256', res=300):
     tim0 = time.time()    
     fileOut = open('gs.log', 'w')
     
-    if re.match('png', device) :
+    if re.match('png', device):
         outExt = 'png'
-    elif re.match('jpeg', device) :
+    elif re.match('jpeg', device):
         outExt = 'jpg'
-    elif re.match('bmp', device) :
+    elif re.match('bmp', device):
         outExt = 'bmp'        
-    elif re.match('tiff', device) :
+    elif re.match('tiff', device):
         outExt = 'tiff'
-    else :
+    else:
         print "device extension not implented!!! => exit"    
         return
     # fonction objectif doit retourner un double
@@ -284,7 +284,7 @@ def execGhostScript(gsExe, inFilter = '*.eps', device='png256', res=300):
         a = 0.0                                
     fileOut.write("\nexecGhostScriptPostPro done in %d sec\n"%(time.time()-tim0))
     fileOut.close()         
-    print "execGhostScriptPostPro : %d files translated in %d sec"%(a, (time.time()-tim0))                                               
+    print "execGhostScriptPostPro: %d files translated in %d sec"%(a, (time.time()-tim0))                                               
     return a
     
 #------------------------------------------------------------------------------------
@@ -297,23 +297,23 @@ def execPythonScript(pythonModule, pythonCmd):
         [baseFName,extFName] = os.path.splitext(fName)        
         (file, pathName, description) = imp.find_module(baseFName, [pName])  
         module = imp.load_module(baseFName, file, pathName, description)        
-        print "python module loaded :  ", pythonModule
-    except :
-        print "execPythonScript Error : unable to find or load pythonModule :  ", pythonModule
+        print "python module loaded:  ", pythonModule
+    except:
+        print "execPythonScript Error: unable to find or load pythonModule:  ", pythonModule
     
     try:
-        print "method to search in module : ", pythonCmd
+        print "method to search in module: ", pythonCmd
         m = re.match('(.*)\((.*)\)', pythonCmd)
         #print "re.match(...) = ", m
-        if m :          
+        if m:          
             print "method ", repr(m.group(1)), " found... with arg " ,repr(m.group(2))
             method = getattr(module, m.group(1))
             print dir(method)
             print "method ", m.group(1), " loaded..."            
-            if len(m.group(2)) > 0 :
+            if len(m.group(2)) > 0:
                 args = m.group(2).split(',')
                 argsVals=[]
-                for arg in args :
+                for arg in args:
                     argsVals.append(eval(arg))
                 method(*argsVals)
             else:
@@ -324,7 +324,7 @@ def execPythonScript(pythonModule, pythonCmd):
             method()
             print "method ", pythonCmd,'()', " called..."     
             
-        print "execPythonScript : compute done"
+        print "execPythonScript: compute done"
         a=1.0        
     except:
         print "problem during python cmd ",pythonCmd, " from module ", pythonModule, " run"
@@ -332,7 +332,7 @@ def execPythonScript(pythonModule, pythonCmd):
                 
     fileOut.write("\execPythonScript done in %d sec\n"%(time.time()-tim0))
     fileOut.close()         
-    print "execPythonScript : done in %d sec"%(time.time()-tim0)
+    print "execPythonScript: done in %d sec"%(time.time()-tim0)
     return a
     
 #------------------------------------------------------------------------------------

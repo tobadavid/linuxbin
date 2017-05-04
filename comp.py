@@ -225,7 +225,7 @@ class CompJob(ParametricJob):
             self.rmNodeResultsScript(self.jobId)
             cmd="nice -%s python battery.py -j %s -k %s -wdroot %s >battery.log 2>&1" % (self.pars['NICE_VALUE'].val, self.pars['NB_TASKS'].val, self.pars['NB_THREADS'].val, 
             self.getLocalDiskDir(self.jobId))
-        else :
+        else:
             cmd="nice -%s python battery.py -j %s -k %s >battery.log 2>&1" % (self.pars['NICE_VALUE'].val, self.pars['NB_TASKS'].val, self.pars['NB_THREADS'].val)
         p = subprocess.Popen(cmd, shell=True)
         p.wait()        
