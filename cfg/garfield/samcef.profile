@@ -1,10 +1,9 @@
-# Samcef v15.01-3
+# Samcef
 
-if [ -d /opt/SamcefField/V8.5-01/Samcef-V151i8/lin/bin ] ; then
+if [ -d /opt/Samv18i8 ] ; then
     export SAM_ZONE=200000000
-    add2env PATH "/opt/SamcefField/V8.5-01/Samcef-V151i8/lin/bin"
-    export SAM_USE_FLEXLM=1
-    export SAMTECH_LICENSE_FILE=@pegase.ltas.ulg.ac.be
-    #export SAMTECH_LICENSE_FILE=/opt/SamcefField/V8.5-01/SAMTECH.lic
+    add2env PATH "/opt/samcef"
+    # pas besoin de definir LMS_LICENSE
+    # (deja defini dans "/opt/samcef/site" lors de l'install)
 fi
 

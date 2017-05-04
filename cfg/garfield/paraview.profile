@@ -1,3 +1,3 @@
 
-add2env PATH "$HOME/local/paraview-5.2.0/bin"
-
+#add2env PATH "/opt/paraview/bin"
+alias paraview='/opt/paraview/bin/paraview'

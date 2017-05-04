@@ -1,4 +1,4 @@
-# adds DynELA to env variables
+# DynELA: http://pantale.free.fr/Recherche/DynELA.html
 
 if [ -d $HOME/dev/DynELA/DynELA ] ; then
     export DynELA_ROOT=$HOME/dev/DynELA/DynELA
