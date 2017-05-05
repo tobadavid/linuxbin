@@ -12,6 +12,8 @@ SET(PYSCRIPTS externalProgramPath.py
               externalProgramPathGui.pyw
               launch.py
               launchGui.pyw
+              postProLoop.py
+              postProLoop.pyw
 )
 
 INSTALL(FILES ${PYMODULES} DESTINATION .)
