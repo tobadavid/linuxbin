@@ -61,7 +61,7 @@ class CompJob(ParametricJob):
         TextPRM(self.pars,  'NB_TASKS',     'nb of task launched in parallel', "1")
         TextPRM(self.pars,  'NB_THREADS',   'nb of threads by task', "1")     
 
-        MultiPRM(self.pars, 'RUNMETHOD',    'Run Method', ["interactive", "batch", "sge"], "batch")
+        MultiPRM(self.pars, 'RUNMETHOD',    'Run Method', ["interactive", "at", "batch", "sge"], "batch")
         TextPRM(self.pars,  'AT_TIME' ,     'Delay for at launch (no syntax check, use with care)', "now")    
         TextPRM(self.pars,  'SGEARGS',      'additional SGE args', "")
         TextPRM(self.pars,  'SGEQUEUE',     'SGE queue', "lomem.q")   
@@ -106,7 +106,7 @@ class CompJob(ParametricJob):
         self.pars['DEBUG_MODE'].enable(self.pars['COMPILE'].val==True)
         self.pars['NICE_VALUE'].enable(self.pars['BATTERY'].val!=False and self.pars['RUNMETHOD'].val!='sge')        
         # Batch        
-        self.pars['AT_TIME'].enable(self.pars['RUNMETHOD'].val=='batch')
+        self.pars['AT_TIME'].enable(self.pars['RUNMETHOD'].val=='at')
         # sge
         self.pars['SGEQUEUE'].enable(self.pars['RUNMETHOD'].val=='sge')
         self.pars['SGEARGS'].enable(self.pars['RUNMETHOD'].val=='sge')
@@ -292,7 +292,8 @@ class CompJob(ParametricJob):
                 os.remove("qDel%s.py" % self.jobId)    
             if os.path.isfile(self.cfgfile):
                 os.remove(self.cfgfile)
-        elif self.pars['RUNMETHOD'].val == 'batch':
+        elif (self.pars['RUNMETHOD'].val == 'at' or
+              self.pars['RUNMETHOD'].val == 'batch'):
             if os.path.isfile("kill%s.py" % self.jobId):
                 os.remove("kill%s.py" % self.jobId)
             if os.path.isfile("atrm%s.py" % self.jobId):
