@@ -6,7 +6,5 @@ LIB=$LIB:/opt/mumps-4.10.0-TbbIcc/lib
 export LIB
 INCLUDE=$INCLUDE:/opt/mumps-4.10.0-TbbIcc/include
 export INCLUDE
-
-# not necessary while cmake link with absolute path to libs
-#LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/mumps-4.10.0/lib
-#export LD_LIBRARY_PATH
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/mumps-4.10.0-TbbIcc/lib
+export LD_LIBRARY_PATH

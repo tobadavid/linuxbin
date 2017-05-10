@@ -52,10 +52,11 @@ class LaunchJob(ParametricJob):
         TextPRM(self.pars,  'NB_TASKS',     'nb of task launched in parallel', "1")
         TextPRM(self.pars,  'NB_THREADS',   'nb of threads by task', "1")  
         if isUnix():
-            MultiPRM(self.pars, 'RUNMETHOD',    'Run Method', ["interactive", "batch", "sge", "slurm"], "interactive")
+            MultiPRM(self.pars, 'RUNMETHOD',    'Run Method', ["interactive", "at", "batch", "sge", "slurm"], "interactive")
         else:
             MultiPRM(self.pars, 'RUNMETHOD',    'Run Method', ["interactive"], "interactive")            
-        TextPRM(self.pars,  'AT_TIME' ,      'Delay for at launch (no syntax check, use with care)', "now")        
+            
+        TextPRM(self.pars,  'AT_TIME' ,     'Delay for at launch (no syntax check, use with care)', "now")        
         TextPRM(self.pars,  'SGEARGS',      'additional SGE args', "")
         TextPRM(self.pars,  'SGEQUEUE',     'SGE queue', "lomem.q")   
         YesNoPRM(self.pars, 'LOCALDISK',    'Metafor run on node local disk', True)    
@@ -85,9 +86,8 @@ class LaunchJob(ParametricJob):
         PRMAction(self.actions, 'j', self.pars['NB_TASKS'])      
         PRMAction(self.actions, 'k', self.pars['NB_THREADS'])
         PRMAction(self.actions, 'm', self.pars['RUNMETHOD'])
-        # Batch paramters
-        PRMAction(self.actions, 'n', self.pars['AT_TIME'])
-        
+        # At parameters
+        PRMAction(self.actions, 'n', self.pars['AT_TIME'])        
         # SGE PARAMETERS
         PRMAction(self.actions, 'n', self.pars['SGEQUEUE'])
         PRMAction(self.actions, 'o', self.pars['LOCALDISK'])
@@ -148,8 +148,8 @@ class LaunchJob(ParametricJob):
         self.pars['AFFINITY'].enable(self.pars['RUNMETHOD'].val!='sge' and 
                                      self.pars['RUNMETHOD'].val!='slurm' and 
                                      self.pars['MULTITEST'].val==False)
-        # Batch        
-        self.pars['AT_TIME'].enable(self.pars['RUNMETHOD'].val=='batch')
+        # At
+        self.pars['AT_TIME'].enable(self.pars['RUNMETHOD'].val=='at')
         # SGE                             
         self.pars['SGEQUEUE'].enable(self.pars['RUNMETHOD'].val=='sge')
         self.pars['LOCALDISK'].enable((self.pars['RUNMETHOD'].val=='sge' or 
@@ -180,8 +180,8 @@ class LaunchJob(ParametricJob):
             jobname=jobname[:-1]
         return jobname.encode('ascii','ignore') # convert to ASCII if some strings were unicode
         
-    def getOutFileName(self):
-        outFileName  = "%s.%s.txt" % (self.pars['OUTFILE'].val, self.pars['ALGORITHM'].val)                
+    def getOutFileName(self):    
+        outFileName  = "%s.%s-%s.txt" % (self.pars['OUTFILE'].val, self.pars['ALGORITHM'].val,self.jobId)                
         if self.debug:
             print "outFileName = ", outFileName
         return outFileName
@@ -190,7 +190,8 @@ class LaunchJob(ParametricJob):
     def run(self):
         # write kill scripts        
         if isUnix():
-            if self.pars['RUNMETHOD'].val == 'interactive' or self.pars['RUNMETHOD'].val == 'batch':
+            if (self.pars['RUNMETHOD'].val == 'interactive' or self.pars['RUNMETHOD'].val == 'at' or
+               self.pars['RUNMETHOD'].val == 'batch'):
                 self.killScript(self.jobId, os.getpgrp())
             elif ((self.pars['RUNMETHOD'].val == 'sge' or self.pars['RUNMETHOD'].val == 'slurm') and 
                   self.pars['LOCALDISK'].val == True):
@@ -262,7 +263,7 @@ class LaunchJob(ParametricJob):
             elif self.pars['RUNMETHOD'].val == 'slurm': 
                 fNames.append(self.sCancelScriptName(self.jobId))
                 fNames.append(self.cfgfile)     
-            elif self.pars['RUNMETHOD'].val == 'batch':    
+            elif self.pars['RUNMETHOD'].val == 'at' or self.pars['RUNMETHOD'].val == 'batch':    
                 fNames.append("kill%s.py"%self.jobId)   
                 fNames.append("atrm%s.py"%self.jobId)   
                 fNames.append(self.cfgfile)     
@@ -381,6 +382,8 @@ class LaunchJob(ParametricJob):
         else:  
             #close pin flux
             pin.close()
+            # flush des outfile pour déjà avoir un max d'info de debug
+            self.outFile.flush()        
             # waiting execution time
             retcode = p.wait()
 

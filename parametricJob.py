@@ -151,7 +151,9 @@ class ParametricJob(PRMSet):
         sys.exit(1)
 
     def guessProfile(self):
-        for cfgfile in [os.path.expanduser('~/.profile'), os.path.expanduser('~/.bash_profile')]:
+        for cfgfile in [os.path.join(os.path.split(__file__)[0], 'env.sh'), 
+                        os.path.expanduser('~/.profile'), 
+                        os.path.expanduser('~/.bash_profile')]:
             if os.path.isfile(cfgfile):
                 break
         else:
@@ -243,10 +245,8 @@ class ParametricJob(PRMSet):
                 cmd2 = "rm -rf %s"%localNodeDir
                 print "cmd2 = ", cmd2            
                 subprocess.call([cmd2],stderr=subprocess.STDOUT, shell=True) # 2 commands for not deleting files if copy throw an exception 
-                #execfile(self.rmNodeResultsScriptName(jobId))
                 os.remove(self.cpNodeResultsScriptName(jobId))
-                os.remove(self.rmNodeResultsScriptName(jobId))                
-                #os.remove(self.qDelScriptName(jobId))
+                os.remove(self.rmNodeResultsScriptName(jobId)) 
                 # suppression des scripts   
             else: # on va au moins nettoyer ce qui est commun            
                 print "copie imparfaite => nettoyage de ce qui est commun"
@@ -259,7 +259,7 @@ class ParametricJob(PRMSet):
             print "get back result files using %s "%self.cpNodeResultsScriptName(jobId)
     # End of Use Local Disk Specific
     #===========================================================================================================================    
-    # BATCH SPECIFIC    
+    # AT/BATCH SPECIFIC    
     def runBatch(self):
         # get guess profile
         cfgfile = self.guessProfile()
@@ -276,7 +276,12 @@ class ParametricJob(PRMSet):
         os.chmod(scriptname,0700)
         print "starting script in batch mode: %s" % scriptname
         #shcmd="at %s -f %s" % (self.pars['BATCHTIME'].val, scriptname)
-        shcmd="echo \"/bin/bash %s\" | at %s" % (scriptname, self.pars['AT_TIME'].val) # keep it like that else job may start in dash !!!
+        if self.pars['RUNMETHOD'].val == "at" :
+            shcmd="echo \"/bin/bash %s\" | at %s" % (scriptname, self.pars['AT_TIME'].val) # keep it like that else job may start in dash !!!
+        elif self.pars['RUNMETHOD'].val == "batch" :
+            shcmd="echo \"/bin/bash %s\" | batch " % (scriptname) # keep it like that else job may start in dash !!!
+        else :
+            print "error runBatch must be batch or at"
         #shcmd="at now + 1 minutes -f %s" % (scriptname)
         #shcmd="at now %s" % scriptname
         print "shcmd = ", shcmd
@@ -296,7 +301,7 @@ class ParametricJob(PRMSet):
                 os.system("cp %s %s%s%s"%(self.cfgfile, cfgFileName, batchId, cfgFileExtension))
                 self.atrmScript(batchId)
                 print "\tuse 'atq' and find job number %s to check the status of your job" % batchId
-                print "\t\t - 'a' means waiting in the queue" 
+                print "\t\t - 'a' means waiting in the queue 'a'" 
                 print "\t\t - '=' means running"
                 print "\tuse 'atrm %s to kill the job" % batchId    
                 print "\t\t  or 'atrm%s.py' to kill the job" % batchId    
@@ -385,12 +390,13 @@ class ParametricJob(PRMSet):
         filename = "qDel%s.py"%jobId
         return filename
 
-    def qQelScript(self, jobId):
+    def qDelScript(self, jobId):
         filename = self.qDelScriptName(jobId)
         file=open(filename,"w")
         file.write("#!/usr/bin/env python\n")
         file.write("import subprocess, os, sys\n")
         file.write("subprocess.call('qdel %s',shell=True)\n"%jobId)
+        # localDisk Clean
         homeDir=os.getcwd()
         nodeHost = socket.gethostname()
         localNodeDir = self.getLocalDiskDir(jobId)
@@ -413,6 +419,7 @@ class ParametricJob(PRMSet):
         file.write("\t\tsys.exit(1)\n")   
         file.write("\telse:\n")     
         file.write("\t\tos.remove('./%s')\n"%(self.rmNodeResultsScriptName(jobId)))
+        #
         file.write("os.remove('./%s')\n"%(filename))
         file.write("sys.exit(0)\n")                            
         file.close()
@@ -436,8 +443,9 @@ class ParametricJob(PRMSet):
         #file.write("#SBATCH --output=%s\n"%self.getOutFileName())        
         file.write("# Ressources needed...\n")
         file.write("#SBATCH --partition=%s\n"%self.pars['QUEUE'].val)
+        nbCores = (int(self.pars['NB_TASKS'].val) * int(self.pars['NB_THREADS'].val))
         file.write("#SBATCH --ntasks=1\n")
-        file.write("#SBATCH --cpus-per-task=%s\n"%self.pars['NB_THREADS'].val)
+        file.write("#SBATCH --cpus-per-task=%d\n"%nbCores)
         file.write("#SBATCH --time=%s\n"%self.pars['TIME'].val)
         file.write("#SBATCH --mem=%s\n"%self.pars['MEMORY'].val)
         #file.write("#SBATCH --mem-bind=verbose,local\n")
@@ -485,7 +493,32 @@ class ParametricJob(PRMSet):
         file=open(filename,"w")
         file.write("#!/usr/bin/env python\n")
         file.write("import subprocess, os, sys\n")
-        file.write("subprocess.call('scancel %s',shell=True)\n"%jobId)        
+        file.write("subprocess.call('scancel %s',shell=True)\n"%jobId)             
+        # localDisk Clean
+        if self.pars['LOCALDISK'].val :
+            homeDir=os.getcwd()
+            nodeHost = socket.gethostname()
+            localNodeDir = self.getLocalDiskDir(jobId)
+            localWSpace = localNodeDir+os.sep+'*'
+            file.write("if os.path.isfile('%s'):\n"%(self.cpNodeResultsScriptName(jobId)))
+            file.write("\toutCp = subprocess.call('./%s', shell=True)\n"%(self.cpNodeResultsScriptName(jobId)))
+            file.write("\tif outCp != 0:\n")        
+            file.write("\t\tprint 'Error copying files from node %s'\n"%nodeHost)        
+            file.write("\t\tprint '\tget them using %s script '\n"%self.cpNodeResultsScriptName(jobId))
+            file.write("\t\tprint '\tthen clean the remote disk using %s script '\n"%self.rmNodeResultsScriptName(jobId))
+            file.write("\t\tsys.exit(1)\n")
+            file.write("\telse:\n")     
+            file.write("\t\tos.remove('./%s')\n"%(self.cpNodeResultsScriptName(jobId)))                                    
+            file.write("if os.path.isfile('%s'):\n"%(self.rmNodeResultsScriptName(jobId)))
+            file.write("\toutRm = subprocess.call('./%s', shell=True)\n"%(self.rmNodeResultsScriptName(jobId)))        
+            file.write("\tif outCp != 0:\n")        
+            file.write("\t\tprint 'Error deleting files from node %s'\n"%nodeHost)        
+            file.write("\t\tprint '\ttry cleaning them using %s script '\n"%self.rmNodeResultsScriptName(jobId))
+            file.write("\t\tprint '\tand only if it do not work, clean disk by hand!!!'\n")    
+            file.write("\t\tsys.exit(1)\n")   
+            file.write("\telse:\n")     
+            file.write("\t\tos.remove('./%s')\n"%(self.rmNodeResultsScriptName(jobId)))
+        # clean sCancelScript           
         file.write("os.remove('./%s')\n"%(filename))
         file.write("sys.exit(0)\n")                            
         file.close()
@@ -506,7 +539,8 @@ class ParametricJob(PRMSet):
     def go(self):        
         self.savePars()
         print "go in %s" % self.pars['RUNMETHOD'].val
-        if self.pars['RUNMETHOD'].val == 'batch':
+        if (self.pars['RUNMETHOD'].val == 'at' or
+           self.pars['RUNMETHOD'].val == 'batch'):
             self.runBatch()
         elif  self.pars['RUNMETHOD'].val == 'sge':
             self.runSGE()
