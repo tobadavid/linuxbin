@@ -65,10 +65,10 @@ class LaunchJob(ParametricJob):
         TextPRM(self.pars,  'TIME',         'Time (d-hh:mm:ss) ', "0-1:00:00")   
 
         YesNoPRM(self.pars, 'ENABLE_FTP',   'ftp transfert', False)
-        TextPRM(self.pars,  'FTP_HOST',     'ftp host', "garfield.ltas.ulg.ac.be")
+        TextPRM(self.pars,  'FTP_HOST',     'ftp host', "")
         TextPRM(self.pars,  'FTP_PORT',     'ftp port', "21")
-        TextPRM(self.pars,  'FTP_USER',     'ftp user', "dark")
-        TextPRM(self.pars,  'FTP_PASS',     'ftp passwd', "vador")
+        TextPRM(self.pars,  'FTP_USER',     'ftp user', "")
+        TextPRM(self.pars,  'FTP_PASS',     'ftp passwd', "")
         TextPRM(self.pars,  'FTP_DIR',      'ftp directory', "incoming")
         
         PRMAction(self.actions, 'a', self.pars['MAIL_ADDR']) 
