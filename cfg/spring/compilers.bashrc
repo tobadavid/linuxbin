@@ -3,6 +3,8 @@
 # => we call intel cf file  in both places (bashrc & profile)
 
 if [ -z "$MKLROOT" ]; then
-   . /opt/intel/bin/compilervars.sh intel64
+      . /opt/intel/bin/compilervars.sh intel64
+      #. /opt/intel/mkl/bin/mklvars.sh intel64
+      #. /opt/intel/tbb/bin/tbbvars.sh intel64
 fi
 
