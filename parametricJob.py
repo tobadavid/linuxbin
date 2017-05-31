@@ -8,13 +8,7 @@ from prmClasses import *
 class ParametricJob(PRMSet):
     def __init__(self,cfgfile, _verb=False):
         PRMSet.__init__(self, cfgfile, _verb)
-        # parfois nécessaire de garder en mémoire le nom du master node
-        # pour lui faire executer des cmd à travers un 'ssh "cmd"'(ex: svn sur fabulous)
-        self.masterNode = ''
-          
-    def setMasterNode(self, mn):
-        self.masterNode = mn   
-                
+                          
     def getNiceCmd(self, niceValue):
         if isUnix():
             niceCmd = ['nice', '-%d'%niceValue]
@@ -349,18 +343,23 @@ class ParametricJob(PRMSet):
         file.write("#$ -m beas\n")
         file.write("#$ -M %s\n" % self.pars['MAIL_ADDR'].val)
         nbCores = (int(self.pars['NB_TASKS'].val) * int(self.pars['NB_THREADS'].val))
-        file.write("#$ -pe snode %d\n" % nbCores)
+        if self.pars['SGE_PE'].val != '':
+            file.write("#$ -pe %s %d\n" % (self.pars['SGE_PE'].val, nbCores))
         file.write("#$ -binding linear:%d\n" %  nbCores)
         #else:
         #    file.write("#$ -binding linear:1\n") # set affinity even for a single core job
-        if self.pars['SGEQUEUE'].val!='':    
-            file.write("#$ -q %s\n" % self.pars['SGEQUEUE'].val)
+        if self.pars['QUEUE'].val!='':    
+            file.write("#$ -q %s\n" % self.pars['QUEUE'].val)
+        if self.pars['MEMORY'].val!='':    
+            file.write("#$ -l h_vmem=%sM\n" % self.pars['MEMORY'].val)
+        if self.pars['TIME'].val!='':    
+            file.write("#$ -l h_rt=%s\n" % self.pars['TIME'].val)
+            
         if self.pars['SGEARGS'].val!='':
             file.write("#$ %s\n" % self.pars['SGEARGS'].val)
         import socket
         file.write(". %s %s\n" % (cfgfile,socket.gethostname()))
-        cmd='%s -x -i $JOB_ID -m %s' % (sys.argv[0], socket.gethostname())
-        file.write("%s\n" % cmd)
+        file.write("%s -x -i $JOB_ID\n" % (sys.argv[0]))
         file.close()
         # send to sge
         print "sending job '%s' to SGE" % jobname
@@ -452,12 +451,8 @@ class ParametricJob(PRMSet):
         #file.write("echo \"SLURM_JOB_ID = $SLURM_JOB_ID\"\n")
         #file.write("echo 'squeue'\n")
         import socket        
-        file.write(". %s %s\n" % (cfgfile,socket.gethostname()))        
-        cmd='%s -x -i $SLURM_JOB_ID -m %s' % (sys.argv[0], socket.gethostname())
-        #file.write("echo 'before cmd %s'\n"%cmd)
-        file.write("srun %s\n" % cmd)
-        #file.write("echo 'cmd done'\n")
-
+        file.write(". %s %s\n" % (cfgfile, socket.gethostname()))        
+        file.write("srun %s -x -i $SLURM_JOB_ID \n" % (sys.argv[0]))
         file.close()
         os.chmod(scriptname,0700)
         # send to slurm

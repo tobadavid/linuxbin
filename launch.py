@@ -51,26 +51,30 @@ class LaunchJob(ParametricJob):
         TextPRM(self.pars,  'AFFINITY',     'affinity (cores list)', "")    
         TextPRM(self.pars,  'NB_TASKS',     'nb of task launched in parallel', "1")
         TextPRM(self.pars,  'NB_THREADS',   'nb of threads by task', "1")  
+        
         if isUnix():
-            MultiPRM(self.pars, 'RUNMETHOD',    'Run Method', ["interactive", "at", "batch", "sge", "slurm"], "interactive")
+            MultiPRM(self.pars, 'RUNMETHOD',    'Run Method', ["interactive", "at", "batch", "slurm", "sge"], "interactive")
         else:
             MultiPRM(self.pars, 'RUNMETHOD',    'Run Method', ["interactive"], "interactive")            
-            
-        TextPRM(self.pars,  'AT_TIME' ,     'Delay for at launch (no syntax check, use with care)', "now")        
-        TextPRM(self.pars,  'SGEARGS',      'additional SGE args', "")
-        TextPRM(self.pars,  'SGEQUEUE',     'SGE queue', "lomem.q")   
-        YesNoPRM(self.pars, 'LOCALDISK',    'Metafor run on node local disk', True)    
+        #AT    
+        TextPRM(self.pars,  'AT_TIME' ,     'Delay for at launch (no syntax check, use with care)', "now") 
+        # QUEUING SYSTEMS : SGE / SLURM
         TextPRM(self.pars,  'QUEUE',        'Queue name', "defq")   
+        YesNoPRM(self.pars, 'LOCALDISK',    'Metafor run on node local disk', True)    
         TextPRM(self.pars,  'MEMORY',       'Total Memory (Mb)', "1000")   
         TextPRM(self.pars,  'TIME',         'Time (d-hh:mm:ss) ', "0-1:00:00")   
-
+        # SGE specific       
+        TextPRM(self.pars,  'SGE_PE',       'SGE parallel environment', "snode")   
+        TextPRM(self.pars,  'SGEARGS',      'additional SGE args', "")
+        # FTP
         YesNoPRM(self.pars, 'ENABLE_FTP',   'ftp transfert', False)
         TextPRM(self.pars,  'FTP_HOST',     'ftp host', "")
         TextPRM(self.pars,  'FTP_PORT',     'ftp port', "21")
         TextPRM(self.pars,  'FTP_USER',     'ftp user', "")
         TextPRM(self.pars,  'FTP_PASS',     'ftp passwd', "")
         TextPRM(self.pars,  'FTP_DIR',      'ftp directory', "incoming")
-        
+
+        # Actions
         PRMAction(self.actions, 'a', self.pars['MAIL_ADDR']) 
         PRMAction(self.actions, 'b', self.pars['EXEC_NAME']) 
         PRMAction(self.actions, 'c', self.pars['TEST_NAME']) 
@@ -88,15 +92,15 @@ class LaunchJob(ParametricJob):
         PRMAction(self.actions, 'm', self.pars['RUNMETHOD'])
         # At parameters
         PRMAction(self.actions, 'n', self.pars['AT_TIME'])        
-        # SGE PARAMETERS
-        PRMAction(self.actions, 'n', self.pars['SGEQUEUE'])
-        PRMAction(self.actions, 'o', self.pars['LOCALDISK'])
-        PRMAction(self.actions, 'p', self.pars['SGEARGS'])
-        # SLURM PARAMETERS
+        # SGE/SLURM PARAMETERS
         PRMAction(self.actions, 'n', self.pars['QUEUE'])
-        #PRMAction(self.actions, 'o', self.pars['LOCALDISK'])
+        PRMAction(self.actions, 'o', self.pars['LOCALDISK'])
         PRMAction(self.actions, 'p', self.pars['MEMORY'])
         PRMAction(self.actions, 'q', self.pars['TIME'])        
+        # SGE specific PARAMETERS
+        #PRMAction(self.actions, 'n', self.pars['SGEQUEUE'])
+        PRMAction(self.actions, 'r', self.pars['SGE_PE'])
+        PRMAction(self.actions, 's', self.pars['SGEARGS'])
         # FTP
         PRMAction(self.actions, 'u', self.pars['ENABLE_FTP']) 
         PRMAction(self.actions, 'v', self.pars['FTP_HOST']) 
@@ -116,7 +120,6 @@ class LaunchJob(ParametricJob):
         if self.debug:
             print "applyDependecies: " 
             print "     self.pars['ALGORITHM'].val = ", self.pars['ALGORITHM'].val
-        
             
         if self.pars['ALGORITHM'].val=='restart':
             self.pars['MULTITEST'].val = False
@@ -150,21 +153,20 @@ class LaunchJob(ParametricJob):
                                      self.pars['MULTITEST'].val==False)
         # At
         self.pars['AT_TIME'].enable(self.pars['RUNMETHOD'].val=='at')
-        # SGE                             
-        self.pars['SGEQUEUE'].enable(self.pars['RUNMETHOD'].val=='sge')
+        # SGE/SLURM
+        self.pars['QUEUE'].enable(self.pars['RUNMETHOD'].val=='sge' or 
+                                  self.pars['RUNMETHOD'].val=='slurm')
         self.pars['LOCALDISK'].enable((self.pars['RUNMETHOD'].val=='sge' or 
                                        self.pars['RUNMETHOD'].val=='slurm') and
                                       self.pars['ALGORITHM'].val!='restart' )
+        self.pars['TIME'].enable(self.pars['RUNMETHOD'].val=='sge' or 
+                                 self.pars['RUNMETHOD'].val=='slurm')
+        self.pars['MEMORY'].enable(self.pars['RUNMETHOD'].val=='sge' or 
+                                   self.pars['RUNMETHOD'].val=='slurm')
+        # SGE specific                           
+        self.pars['SGE_PE'].enable(self.pars['RUNMETHOD'].val=='sge')
         self.pars['SGEARGS'].enable(self.pars['RUNMETHOD'].val=='sge')        
-        # SLURM
-        self.pars['QUEUE'].enable(self.pars['RUNMETHOD'].val=='slurm')
-        #self.pars['LOCALDISK'].enable(self.pars['RUNMETHOD'].val=='slurm' and
-        #                              self.pars['ALGORITHM'].val!='restart' )
-        self.pars['TIME'].enable(self.pars['RUNMETHOD'].val=='slurm')
-        self.pars['MEMORY'].enable(self.pars['RUNMETHOD'].val=='slurm')
-        
-        # force 
-        #self.pars['TEST_NAME'].val = self.pars['TEST_NAME'].val
+
     
     def getJobName(self):
         if (self.pars['MULTITEST'].val==False):
@@ -209,14 +211,14 @@ class LaunchJob(ParametricJob):
         if (self.pars['MULTITEST'].val==True):                   
             #check 
             if not os.path.isdir(self.pars['TEST_DIR'].val):
-                print "Error: 'TEST_DIR' non existant directory"
+                print "Error: 'TEST_DIR' %s non existant directory" % self.pars['TEST_DIR'].val
                 return
             asciiname = self.pars['TEST_DIR'].val.encode('ascii','ignore') # convert unicode (from PyQt)
             outRun = self.startMultipleTests(asciiname)
         else:  
             #check 
             if not os.path.isfile(self.pars['TEST_NAME'].val):
-                print "Error: 'TEST_NAME' non existant file"
+                print "Error: 'TEST_NAME' %s non existant file" % self.pars['TEST_NAME'].val
                 return           
             #run 
             asciiname = self.pars['TEST_NAME'].val.encode('ascii','ignore') # convert unicode (from PyQt) 
@@ -504,8 +506,6 @@ if __name__ == "__main__":
                       dest='usegui',default=True, help='disable menu')
     parser.add_argument('-i', '--jobId', dest='jobId', type=str, default='',
                        help='job id')
-    parser.add_argument('-m', '--masternode', dest='masterNode', type=str,default='',
-                       help='master node name')
 
     # Parsing arguments 
     args = parser.parse_args()    
@@ -517,7 +517,6 @@ if __name__ == "__main__":
         os.chdir(args.rundir)
 
     job = LaunchJob(args.jobId)
-    job.setMasterNode(args.masterNode) #le defaut valant '' => ok
     
     if args.usegui:
         job.menu()

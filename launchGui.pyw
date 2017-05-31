@@ -143,15 +143,18 @@ class LaunchGui(QWidget):
         self.sf['AT_TIME']     = TextLine(self, grplay6, self.launch.pars['AT_TIME'], 0, 0, 1)
         
         # SGE OPTIONS
-        self.sgeOptGrpBox  = QGroupBox("Sge Options")
+        self.sgeOptGrpBox  = QGroupBox("Queue Options (SGE / SLURM)")
         vbox.addWidget(self.sgeOptGrpBox)
         grplay4 = QGridLayout()
         self.sgeOptGrpBox.setLayout(grplay4) 
         grplay4.setColumnStretch(2,1)
         
-        self.sf['SGEQUEUE']     = TextLine(self, grplay4, self.launch.pars['SGEQUEUE'], 0, 0, 1)
-        self.sf['LOCALDISK']    = CheckBoxLine(self, grplay4, self.launch.pars['LOCALDISK'], 0, 3)
-        self.sf['SGEARGS']      = TextLine(self, grplay4, self.launch.pars['SGEARGS'], 1, 0, 4)
+        self.sf['QUEUE']        = TextLine(self, grplay4, self.launch.pars['QUEUE'],     0, 0, 1)
+        self.sf['LOCALDISK']= CheckBoxLine(self, grplay4, self.launch.pars['LOCALDISK'], 0, 3)        
+        self.sf['MEMORY']       = TextLine(self, grplay4, self.launch.pars['MEMORY'],    1, 0, 1)
+        self.sf['TIME']         = TextLine(self, grplay4, self.launch.pars['TIME'],      1, 3, 1)        
+        self.sf['SGE_PE']       = TextLine(self, grplay4, self.launch.pars['SGE_PE'],    2, 0, 1)
+        self.sf['SGEARGS']      = TextLine(self, grplay4, self.launch.pars['SGEARGS'],   2, 3, 1)
         
         # FTP OPTIONS
         self.ftpOptGrpBox  = QGroupBox("FTP Options")
