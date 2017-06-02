@@ -21,7 +21,7 @@ except:
     pass     
 if not foundQt:
     raise Exception("PyQt4/5 not found!") 
-print "PyQt%d (Qt %s) loaded!" % (foundQt, QT_VERSION_STR)
+#print "PyQt%d (Qt %s) loaded!" % (foundQt, QT_VERSION_STR)
 
 
 from externalProgramPath import *

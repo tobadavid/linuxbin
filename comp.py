@@ -61,11 +61,8 @@ class CompJob(ParametricJob):
         TextPRM(self.pars,  'NB_TASKS',     'nb of task launched in parallel', "1")
         TextPRM(self.pars,  'NB_THREADS',   'nb of threads by task', "1")     
 
-        MultiPRM(self.pars, 'RUNMETHOD',    'Run Method', ["interactive", "at", "batch", "sge"], "batch")
+        MultiPRM(self.pars, 'RUNMETHOD',    'Run Method', ["interactive", "at", "batch"], "batch")
         TextPRM(self.pars,  'AT_TIME' ,     'Delay for at launch (no syntax check, use with care)', "now")    
-        TextPRM(self.pars,  'SGEARGS',      'additional SGE args', "")
-        TextPRM(self.pars,  'SGEQUEUE',     'SGE queue', "lomem.q")   
-        YesNoPRM(self.pars, 'LOCALDISK',    'Metafor run on node local disk', True)
                 
         MultiPRM(self.pars, 'UNZIP',     'source', ["zip", "checkout", "present"], "zip")
         YesNoPRM(self.pars, 'COMPILE',   'compile', True)
@@ -81,13 +78,9 @@ class CompJob(ParametricJob):
         PRMAction(self.actions, 'k', self.pars['NB_THREADS'])
         
         PRMAction(self.actions, 'm', self.pars['RUNMETHOD'])
-        # Batch paramters
+        # AT paramters
         PRMAction(self.actions, 'n', self.pars['AT_TIME'])
-        #sge parameters
-        PRMAction(self.actions, 'n', self.pars['SGEQUEUE'])
-        PRMAction(self.actions, 'o', self.pars['LOCALDISK'])
-        PRMAction(self.actions, 'p', self.pars['SGEARGS'])
-                
+        # Actions        
         NoAction(self.actions)
         PRMAction(self.actions, '1', self.pars['UNZIP']) 
         PRMAction(self.actions, '2', self.pars['COMPILE']) 
@@ -107,10 +100,6 @@ class CompJob(ParametricJob):
         self.pars['NICE_VALUE'].enable(self.pars['BATTERY'].val!=False and self.pars['RUNMETHOD'].val!='sge')        
         # Batch        
         self.pars['AT_TIME'].enable(self.pars['RUNMETHOD'].val=='at')
-        # sge
-        self.pars['SGEQUEUE'].enable(self.pars['RUNMETHOD'].val=='sge')
-        self.pars['SGEARGS'].enable(self.pars['RUNMETHOD'].val=='sge')
-        self.pars['LOCALDISK'].enable(self.pars['RUNMETHOD'].val=='sge')
 
     def touchFiles(self):
         for repo in self.repos:
@@ -123,12 +112,7 @@ class CompJob(ParametricJob):
         for repo in self.repos:
             if not os.path.isdir(repo.name):
                 print 'checking out "%s" from %s...' % (repo.name, repo.url)
-                cmd = repo.co_cmd()
-                # embed "cmd" in a ssh call if a cluster local disk is used               
-                if self.pars['RUNMETHOD'].val == 'sge' and \
-                   self.pars['LOCALDISK'].val == True :             
-                    cmd = 'ssh %s ". %s; cd %s; %s"' % (self.masterNode, 
-                          self.guessProfile(), os.getcwd(), cmd)                    
+                cmd = repo.co_cmd()   
                 os.system(cmd)
                                 
     def doClean(self):
@@ -220,25 +204,9 @@ class CompJob(ParametricJob):
         now = datetime.datetime.now()
         print "starting battery at %s (come back tomorrow)" % now.ctime()
         os.chdir('oo_metaB/bin')
-        if (self.pars['RUNMETHOD'].val == 'sge' and self.pars['LOCALDISK'].val == True):
-            self.cpNodeResultsScript(self.jobId)
-            self.rmNodeResultsScript(self.jobId)
-            cmd="nice -%s python battery.py -j %s -k %s -wdroot %s >battery.log 2>&1" % (self.pars['NICE_VALUE'].val, self.pars['NB_TASKS'].val, self.pars['NB_THREADS'].val, 
-            self.getLocalDiskDir(self.jobId))
-        else:
-            cmd="nice -%s python battery.py -j %s -k %s >battery.log 2>&1" % (self.pars['NICE_VALUE'].val, self.pars['NB_TASKS'].val, self.pars['NB_THREADS'].val)
+        cmd="nice -%s python battery.py -j %s -k %s >battery.log 2>&1" % (self.pars['NICE_VALUE'].val, self.pars['NB_TASKS'].val, self.pars['NB_THREADS'].val)
         p = subprocess.Popen(cmd, shell=True)
         p.wait()        
-        # get results back from local disk
-        if ((self.pars['RUNMETHOD'].val == 'sge' or self.pars['RUNMETHOD'].val == 'slurm') and 
-                               self.pars['LOCALDISK'].val == True):            
-            print "Trying to get back local workspace to home"
-            self.moveLocalDir2Home(self.jobId)
-            if not os.path.isdir(self.getLocalDiskDir(self.jobId)) : # si la copie a \E9t\E9 bien faite => le local dir a \E9t\E9 nettoy\E9 => on peut virer les scripts
-                if os.path.isfile(self.cpNodeResultsScriptName(self.jobId)):
-                    os.remove(self.cpNodeResultsScriptName(self.jobId))
-                if os.path.isfile(self.rmNodeResultsScriptName(self.jobId)):
-                    os.remove(self.rmNodeResultsScriptName(self.jobId))
         # finish script   
         now = datetime.datetime.now()
         print "battery completed at %s" % now.ctime()
@@ -249,8 +217,6 @@ class CompJob(ParametricJob):
         os.chdir('oo_metaB/bin')
         print "diff'ing results"
         cmd="python battery.py diff"
-        if self.pars['RUNMETHOD'].val == 'sge' and self.pars['LOCALDISK'].val == True:      
-            cmd = 'ssh %s ". %s ; cd %s ; %s "' % (self.masterNode, self.guessProfile(), os.getcwd(), cmd)
         print "checkResults: cmd = %s" % cmd
         os.system(cmd)
         file='verif/%s-diffs.html' % machineid()
@@ -265,8 +231,7 @@ class CompJob(ParametricJob):
 
     def run(self):        
         # kill script that kills running tree
-        if self.pars['RUNMETHOD'].val != "sge":
-            self.killScript(self.jobId, os.getpgrp()) 
+        self.killScript(self.jobId, os.getpgrp()) 
         
         if self.pars['UNZIP'].val=="checkout":
             self.doClean()
@@ -287,22 +252,15 @@ class CompJob(ParametricJob):
             self.startBat()
             self.checkResults()
 
-        if self.pars['RUNMETHOD'].val == 'sge':
-            if os.path.isfile("qDel%s.py" % self.jobId):
-                os.remove("qDel%s.py" % self.jobId)    
-            if os.path.isfile(self.cfgfile):
-                os.remove(self.cfgfile)
-        elif (self.pars['RUNMETHOD'].val == 'at' or
+        if os.path.isfile("kill%s.py" % self.jobId):
+            os.remove("kill%s.py" % self.jobId)
+            
+        if (self.pars['RUNMETHOD'].val == 'at' or
               self.pars['RUNMETHOD'].val == 'batch'):
-            if os.path.isfile("kill%s.py" % self.jobId):
-                os.remove("kill%s.py" % self.jobId)
             if os.path.isfile("atrm%s.py" % self.jobId):
                 os.remove("atrm%s.py" % self.jobId)
             if os.path.isfile(self.cfgfile):
-                os.remove(self.cfgfile)              
-        else:
-            if os.path.isfile("kill%s.py" % self.jobId):
-                os.remove("kill%s.py" % self.jobId)
+                os.remove(self.cfgfile)   
                 
         print "done."
 
@@ -325,8 +283,6 @@ if __name__ == "__main__":
                       dest="usegui",default=True, help="disable menu")
     parser.add_option("-i", "--jobId", dest="jobId", type="str", default='',
                        help="job id")
-    parser.add_option("-m", "--masternode", dest="masterNode", type="str", default='',
-                       help="master node name")
     (options, args) = parser.parse_args()
     #print "options = ", options
     #print "args = ", args
@@ -339,7 +295,6 @@ if __name__ == "__main__":
         
     #print "options.jobId = %s"% options.jobId
     job = CompJob(options.jobId)    
-    job.setMasterNode(options.masterNode) # le defaut valant '' => ok
     
     if options.usegui:
         job.menu()
