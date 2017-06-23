@@ -6,9 +6,8 @@ module load python qt vtk parasolid mumps
 #module load gmm trilinos
 
 module load samcef gmsh 
-#module load isosurf tetgen triangle
+module load isosurf tetgen triangle
 module load matlab scilab
-
 
 # intel community 
 #. /cm/shared/apps/intel-community/2017.2/bin/compilervars.sh intel64
@@ -30,5 +29,3 @@ export FC=gfortran
 #export CC=$(which icc)
 #export CXX=$(which icpc)
 #export FC=$(which ifort)
-
-
