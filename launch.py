@@ -357,7 +357,7 @@ class LaunchJob(ParametricJob):
                                self.pars['LOCALDISK'].val == True):
             pin.write('battery.setWDRoot("%s")\n'%self.getLocalDiskDir(self.jobId))
             
-        if self.pars['RUNMETHOD'].val != 'sge':
+        if self.pars['RUNMETHOD'].val != 'sge' and self.pars['RUNMETHOD'].val != 'slurm':
             if self.pars['AFFINITY'].val != '':
                 pin.write('battery.setAffinity("%s")\n'%self.pars['AFFINITY'].val)
             if self.pars['NICE_VALUE'].val != '0':
