@@ -8,6 +8,7 @@ import os,sys
 
 ## Qt ##
 foundQt=0
+coding='latin-1'
 try:
     from PyQt4.QtCore import *
     from PyQt4.QtGui  import *
@@ -84,7 +85,7 @@ class TextLine(PRMLine):
         if foundQt==4:
             self.param.val = self.lineEdt.text().toLatin1().data()
         else:
-            self.param.val = self.lineEdt.text()
+            self.param.val = self.lineEdt.text().encode(coding)
         #print opt.key,'=',opt.val
         # update widgets visibility according to enable/disable        
         self.win.updateWidgetsVisibility()        
@@ -131,10 +132,11 @@ class PathLine(PRMLine):
         if dir:            
             if foundQt==4:
                 self.param.val = dir.toLatin1().data().replace('/',os.sep)
+                self.lineEdt.setText(dir)
             else:
                 #print "PathLine.action:dir=", dir
-                self.param.val = dir.replace('/',os.sep)
-            self.lineEdt.setText(dir)
+                self.param.val = dir.encode(coding).replace('/',os.sep)
+                self.lineEdt.setText(self.param.val.decode(coding))
         #print self.param.key,'=',self.param.val   
         # update widgets visibility according to enable/disable
         self.checkValidity()
@@ -199,10 +201,9 @@ class FileLine(PRMLine):
             if foundQt==4:
                 self.param.val = file.toLatin1().data().replace('/', os.sep)
                 self.lineEdt.setText(file)
-            else:
-                #print "FileLine.action:file=", file
-                self.param.val = file.replace('/', os.sep)
-                self.lineEdt.setText(self.param.val)
+            else:                
+                self.param.val = file.encode(coding).replace('/', os.sep)
+                self.lineEdt.setText(self.param.val.decode(coding))
         #print "FileLine.action:", self.param.key,'=',self.param.val
         self.checkValidity()
         # update widgets visibility according to enable/disable
@@ -269,8 +270,8 @@ class MultiPMRLine(PRMLine):
         if foundQt==4:
             self.param.val = self.comboBox.currentText().toLatin1().data()
         else:
-            self.param.val = self.comboBox.currentText()
-        print self.param.val
+            self.param.val = self.comboBox.currentText().encode(coding)
+        #print self.param.val
         self.win.updateWidgetsVisibility()
         self.win.updateWidgetsValues()       
 
@@ -317,7 +318,7 @@ class MultiPathLine(PRMLine):
             val = dir.toLatin1().data().replace('/',os.sep)
         else:
             #print "cbIndexChangeAction:dir=",dir
-            val = dir.replace('/',os.sep)
+            val = dir.encode(coding).replace('/',os.sep)
         self.param.val = val
         if val in self.param.vals: # bidouille pour que la nouvelle valeur soit unique et toujours en premiere position
             self.param.vals.remove(val)
@@ -361,7 +362,7 @@ class MultiPathLine(PRMLine):
         self.win.updateWidgetsValues()       
         
     def setParamValue(self):    
-        idx = self.comboBox.findText(self.param.val)
+        idx = self.comboBox.findText(self.param.val.decode(coding))
         self.comboBox.setCurrentIndex(idx)   
              
     def setEnabled(self, enable):
