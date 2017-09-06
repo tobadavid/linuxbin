@@ -1,4 +1,4 @@
 
-add2env LIB "/usr/local/mumps-4.10.0/lib"
-add2env INCLUDE "/usr/local/mumps-4.10.0/include"
+add2env LIB "/opt/mumps/lib"
+add2env INCLUDE "/opt/mumps/include"
 
