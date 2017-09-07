@@ -1,6 +1,6 @@
 # Parasolid
 
-add2env PATH "/opt/parasolid/shared_object"
-add2env INCLUDE "/opt/parasolid"
-export P_SCHEMA=/opt/parasolid/schema
+add2env PATH "/usr/local/parasolid/shared_object"
+add2env INCLUDE "/usr/local/parasolid"
+export P_SCHEMA=/usr/local/parasolid/schema
 
