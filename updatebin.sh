@@ -9,7 +9,7 @@ echo "===== updating fabulous..."
 ssh fabulous 'module load git ; cd ~/bin ; git pull'
 echo "===== updating spring..."
 ssh spring 'cd ~/bin ; git pull'
-echo "===== done."
+echo "===== updating gaston..."
 ssh gaston 'cd ~/bin ; git pull'
 echo "===== done."
 
