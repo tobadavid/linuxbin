@@ -1,2 +1,1 @@
-PATH=$PATH:/opt/MATLAB/R2012a/bin
-
+add2env PATH "/opt/matlab/bin"
