@@ -8,11 +8,11 @@ from prmClasses import *
 class ParametricJob(PRMSet):
     def __init__(self,cfgfile, _verb=False):
         PRMSet.__init__(self, cfgfile, _verb)
-                          
+
     def getNiceCmd(self, niceValue):
         if isUnix():
             niceCmd = ['nice', '-%d'%niceValue]
-        else:            
+        else:
             if niceValue > 14:
                 prior = '/LOW'
             elif niceValue > 8:
@@ -22,30 +22,30 @@ class ParametricJob(PRMSet):
             elif niceValue > 2:
                 prior = '/ABOVENORMAL'
             else:
-                prior = '/HIGH'                                        
-            niceCmd = ['start', prior, '/B', '/WAIT']        
+                prior = '/HIGH'
+            niceCmd = ['start', prior, '/B', '/WAIT']
         return niceCmd
 
     def getMailData(self):
         import re
-        fromAddr = "%s@%s" % (os.path.basename(sys.argv[0]), socket.gethostbyaddr(socket.gethostname())[0])        
+        fromAddr = "%s@%s" % (os.path.basename(sys.argv[0]), socket.gethostbyaddr(socket.gethostname())[0])
         toAddr   = self.pars['MAIL_ADDR'].val
         if re.match('(.+)@(.+)',toAddr):
             smtpServ = self.pars['SMTP_SERV'].val
         else:
             toAddr = "%s@%s"%(self.pars['MAIL_ADDR'].val,socket.gethostbyaddr(socket.gethostname())[0])
             smtpServ = "localhost"
-        if 0:            
+        if 0:
             print "mailData:"
             print "\tfromAddr = %s" % fromAddr
             print "\ttoAddr   = %s" % toAddr
             print "\tsmtpServ = %s" % smtpServ
         return fromAddr, toAddr, smtpServ
-        
+
     def mailmsg(self, msg="no subject", file=None, text=None):
         print 'mailmsg with subject "%s"' % msg
         # getting address & smtp servers
-        fromA, toA, smtpServ = self.getMailData()                        
+        fromA, toA, smtpServ = self.getMailData()
         #subject = "[%s] %s : %s" % (os.path.basename(sys.argv[0]), socket.gethostname(), msg)
         subject=msg
         head = "From: %s\nTo: %s\nSubject: %s\n\n\n" % (fromA, toA, subject)
@@ -65,7 +65,7 @@ class ParametricJob(PRMSet):
     def mailhtml(self, file, subject):
         print 'mailhtml with subject "%s"' % subject
         # getting address & smtp servers
-        fromA, toA, smtpServ = self.getMailData()        
+        fromA, toA, smtpServ = self.getMailData()
         # building email
         from email.MIMEText import MIMEText
         file = open(file,'r')
@@ -82,36 +82,36 @@ class ParametricJob(PRMSet):
         #smtp.set_debuglevel(1)
         smtp.sendmail(fromA, [toA], mail.as_string())
         smtp.close()
-        
+
     def mailHtmlAsAttachement(self, fileName, subject):
         print 'mailHtmlAsAttachement with subject "%s"' % subject
         import mimetypes
         from email                import encoders
         from email.mime.multipart import MIMEMultipart
-        from email.mime.base      import MIMEBase        
+        from email.mime.base      import MIMEBase
         # getting address & smtp servers
-        fromA, toA, smtpServ = self.getMailData()      
+        fromA, toA, smtpServ = self.getMailData()
         # building email
-        mail =  MIMEMultipart()        
+        mail =  MIMEMultipart()
         mail['From']    = fromA
         mail['To']      = toA
         mail['Subject'] = subject
-        #mail.preamble   = 'Battery result in attachement \n'       
-        machineName = socket.gethostname() 
-        from email.MIMEText import MIMEText        
-        text = "Battery result on %s in attachement ...\n" % machineName        
-        msg  = MIMEText(text, 'html','iso-8859-1')        
+        #mail.preamble   = 'Battery result in attachement \n'
+        machineName = socket.gethostname()
+        from email.MIMEText import MIMEText
+        text = "Battery result on %s in attachement ...\n" % machineName
+        msg  = MIMEText(text, 'html','iso-8859-1')
         msg['From']    = fromA
         msg['To']      = toA
         msg['Subject'] = subject
         mail.attach(msg)
-        
-        ctype, encoding = mimetypes.guess_type(fileName)  
+
+        ctype, encoding = mimetypes.guess_type(fileName)
         if ctype is None or encoding is not None:
             # No guess could be made, or the file is encoded (compressed), so
             # use a generic bag-of-bits type.
             ctype = 'application/octet-stream'
-        maintype, subtype = ctype.split('/', 1)      
+        maintype, subtype = ctype.split('/', 1)
         try:
             file = open(fileName,'r')
             print "file %s correctly opened for mailing" % fileName
@@ -138,36 +138,36 @@ class ParametricJob(PRMSet):
         except smtplib.SMTPException, e:
             print "mailHtmlAsAttachement: error during smtp sendmail !!!"
             print "smtplib.SMTPException returned: %s"%e
-        
+
     def error(self, msg="error", file=None):
         print "**ERROR: %s" % msg
         self.mailmsg(msg, file)
         sys.exit(1)
 
     def guessProfile(self):
-        for cfgfile in [os.path.join(os.path.split(__file__)[0], 'env.sh'), 
-                        os.path.expanduser('~/.profile'), 
+        for cfgfile in [os.path.join(os.path.split(__file__)[0], 'env.sh'),
+                        os.path.expanduser('~/.profile'),
                         os.path.expanduser('~/.bash_profile')]:
             if os.path.isfile(cfgfile):
                 break
         else:
             self.error("bash profiles not found" % file)
         return cfgfile
-        
+
     def hasSysCmd(self, cmd):
         import commands
         status, result = commands.getstatusoutput("which %s" % cmd)
         return status==0
-        
+
     # Use Local Disk  SPECIFIC (SGE / SLURM)
-    
+
     def getLocalDiskDir(self, jobId):
-        return "/local/%s_p%s"%(os.getenv('USER'), jobId)        
-    def cpNodeResultsScriptName(self, jobId):        
-        return "cpNodeResults%s.py"%jobId        
-    def rmNodeResultsScriptName(self, jobId):        
-        return "rmNodeResults%s.py"%jobId            
- 
+        return "/local/%s_p%s"%(os.getenv('USER'), jobId)
+    def cpNodeResultsScriptName(self, jobId):
+        return "cpNodeResults%s.py"%jobId
+    def rmNodeResultsScriptName(self, jobId):
+        return "rmNodeResults%s.py"%jobId
+
     def cpNodeResultsScript(self, jobId):
         nodeHost = socket.gethostname()
         filename = self.cpNodeResultsScriptName(jobId)
@@ -179,15 +179,15 @@ class ParametricJob(PRMSet):
         file.write("#!/usr/bin/env python\n")
         file.write("import subprocess, sys\n")
         file.write("print 'Copying data from %s local disk started ...'\n"%(nodeHost))
-        #cpCmd = 'ssh %s \"cp -pRvu %s %s\"' % (nodeHost, localWSpace, homeDir)  
+        #cpCmd = 'ssh %s \"cp -pRvu %s %s\"' % (nodeHost, localWSpace, homeDir)
         #file.write("cpCmd = 'rsync -e ssh -avz --delete-after %s:%s %s'" % (nodeHost, localWSpace, homeDir)) # --delete-after supprime les fichiers de la cible (homeDir) ne se trouvant pas dans la source (localNodeDir) après le transfert
         file.write("cpCmd = 'rsync -e ssh -avz %s:%s %s'\n" % (nodeHost, localWSpace, homeDir))
-        file.write("outCp = subprocess.call(cpCmd, shell=True)\n")        
+        file.write("outCp = subprocess.call(cpCmd, shell=True)\n")
         file.write("if outCp == 0:\n")
         file.write("\tprint 'Copy of data from %s local disk successfully done'\n"%(nodeHost))
         file.write("else:\n")
         file.write("\tprint 'Copy of data from %s local disk did NOT succeded.'\n"%(nodeHost))
-        file.write("\tprint 'Check manually what went wrong before cleaning %s local disk'\n"%(nodeHost))       
+        file.write("\tprint 'Check manually what went wrong before cleaning %s local disk'\n"%(nodeHost))
         file.write("sys.exit(outCp)")
         file.close()
         os.chmod(filename,0700)
@@ -198,10 +198,10 @@ class ParametricJob(PRMSet):
         localNodeDir = self.getLocalDiskDir(jobId)
         #write file
         file=open(filename,"w")
-        file.write("#!/usr/bin/env python\n")        
+        file.write("#!/usr/bin/env python\n")
         #sshRmCmd = 'ssh %s "rm -rf %s"' % (nodeHost, localNodeDir)
-        #s="import os; os.system('%s')\n" % sshRmCmd        
-        #file.write(s)        
+        #s="import os; os.system('%s')\n" % sshRmCmd
+        #file.write(s)
         file.write("import subprocess, sys\n")
         file.write("print 'Deleting data from %s local disk started ...'\n"%(nodeHost))
         file.write("outRm = subprocess.call('ssh %s \"rm -rf %s\"', shell=True)\n"%
@@ -210,11 +210,11 @@ class ParametricJob(PRMSet):
         file.write("\tprint 'Deleting of data from %s local disk successfully done'\n"%(nodeHost))
         file.write("else:\n")
         file.write("\tprint 'Deleting of data from %s local disk did NOT succeded.'\n"%(nodeHost))
-        file.write("\tprint 'Check manually how to clean %s local disk'\n"%(nodeHost))       
+        file.write("\tprint 'Check manually how to clean %s local disk'\n"%(nodeHost))
         file.write("sys.exit(outRm)")
         file.close()
         os.chmod(filename,0700)
-        
+
     def moveLocalDir2Home(self, jobId):
         localNodeDir = self.getLocalDiskDir(jobId)
         homeDir=os.getcwd()
@@ -222,38 +222,38 @@ class ParametricJob(PRMSet):
         #shutil.move(localNodeDir,homeDir) # do not work if dst dir exist or it exist => use of "cp -r"!!!
         try: # -R : recursif / p : preserve attribut (owner/mode/timestamp)  / u : update (copy only if source is newer than target)/ v : verbose
             ##cmd1 = "cp -Rpuv %s/* %s"%(localNodeDir, homeDir)
-            #cmd1 = "cp -Rpu %s/* %s"%(localNodeDir, homeDir)          
+            #cmd1 = "cp -Rpu %s/* %s"%(localNodeDir, homeDir)
             #cmd1 = "rsync -avz --delete-after  %s/* %s"%(localNodeDir, homeDir)   # --delete-after supprime les fichiers de la cible (homeDir) ne se trouvant pas dans la source (localNodeDir) après le transfert
-            cmd1 = "rsync -avz %s/* %s"%(localNodeDir, homeDir)          
-            #--remove-source-files permet de nettoyer la source, mais ca risque de poser problème avec le check ci dessous 
+            cmd1 = "rsync -avz %s/* %s"%(localNodeDir, homeDir)
+            #--remove-source-files permet de nettoyer la source, mais ca risque de poser problème avec le check ci dessous
             # qui plus est, ne supprime pas l'arborescence, juste les fichiers => nettoyage incomplet
             print "cmd1 = ", cmd1
-            subprocess.call([cmd1],stderr=subprocess.STDOUT, shell=True) #use of subprocess to be able to catch errors          
+            subprocess.call([cmd1],stderr=subprocess.STDOUT, shell=True) #use of subprocess to be able to catch errors
             #execfile(self.cpNodeResultsScriptName(jobId))
-            # check que la copie soit bonne (même fichiers des 2 cotés)                        
+            # check que la copie soit bonne (même fichiers des 2 cotés)
             import filecmp
             cmp = filecmp.dircmp(localNodeDir,homeDir)
             #print "cmp.report() = ",cmp.report()
             if recCmp(cmp): # copie parfaite => nettoyage brutal de l'arborescence
                 print "copie parfaite => nettoyage brutal de l'arborescence "
                 cmd2 = "rm -rf %s"%localNodeDir
-                print "cmd2 = ", cmd2            
-                subprocess.call([cmd2],stderr=subprocess.STDOUT, shell=True) # 2 commands for not deleting files if copy throw an exception 
+                print "cmd2 = ", cmd2
+                subprocess.call([cmd2],stderr=subprocess.STDOUT, shell=True) # 2 commands for not deleting files if copy throw an exception
                 os.remove(self.cpNodeResultsScriptName(jobId))
-                os.remove(self.rmNodeResultsScriptName(jobId)) 
-                # suppression des scripts   
-            else: # on va au moins nettoyer ce qui est commun            
+                os.remove(self.rmNodeResultsScriptName(jobId))
+                # suppression des scripts
+            else: # on va au moins nettoyer ce qui est commun
                 print "copie imparfaite => nettoyage de ce qui est commun"
                 os.chdir(localNodeDir)
                 rmCommonFiles(cmp)
-                os.chdir(homeDir)                            
+                os.chdir(homeDir)
         except OSError, e: #except OSError as e: dont work on blueberry
-            print "unable to get back files from local directory"            
+            print "unable to get back files from local directory"
             print "subprocess returned error: ",e
             print "get back result files using %s "%self.cpNodeResultsScriptName(jobId)
     # End of Use Local Disk Specific
-    #===========================================================================================================================    
-    # AT/BATCH SPECIFIC    
+    #===========================================================================================================================
+    # AT/BATCH SPECIFIC
     def runBatch(self):
         # get guess profile
         cfgfile = self.guessProfile()
@@ -264,7 +264,7 @@ class ParametricJob(PRMSet):
         file.write(". %s\n" % cfgfile)
         file.write("echo `atq`\n")
         file.write("jobId=`atq | awk '{if ($1>jobId)jobId=$1} END {print jobId}'`\n")
-        file.write("echo \"at JobId = $jobId\"\n")  
+        file.write("echo \"at JobId = $jobId\"\n")
         file.write('%s -x -i $jobId -d "%s"\n' % (sys.argv[0], os.getcwd()) )
         file.close()
         os.chmod(scriptname,0700)
@@ -295,12 +295,12 @@ class ParametricJob(PRMSet):
                 os.system("cp %s %s%s%s"%(self.cfgfile, cfgFileName, batchId, cfgFileExtension))
                 self.atrmScript(batchId)
                 print "\tuse 'atq' and find job number %s to check the status of your job" % batchId
-                print "\t\t - 'a' means waiting in the queue 'a'" 
+                print "\t\t - 'a' means waiting in the queue 'a'"
                 print "\t\t - '=' means running"
-                print "\tuse 'atrm %s to kill the job" % batchId    
-                print "\t\t  or 'atrm%s.py' to kill the job" % batchId    
+                print "\tuse 'atrm %s to kill the job" % batchId
+                print "\t\t  or 'atrm%s.py' to kill the job" % batchId
         sys.exit()
-        
+
     def atrmScript(self, pid):
         filename = "atrm%s.py"%pid
         file=open(filename,"w")
@@ -308,7 +308,7 @@ class ParametricJob(PRMSet):
         file.write("import os\n")
         file.write("os.system('atrm %s')\n" % pid)
         file.write("if os.path.isfile('kill%s.py'):\n" % pid)
-        file.write("\texecfile('kill%s.py')\n" % pid) 
+        file.write("\texecfile('kill%s.py')\n" % pid)
         file.close()
         os.chmod(filename,0700)
 
@@ -320,10 +320,10 @@ class ParametricJob(PRMSet):
         file.write(s)
         file.close()
         os.chmod(filename,0700)
-        
-    #===========================================================================================================================    
-    # SGE SPECIFIC    
-    def runSGE(self):  
+
+    #===========================================================================================================================
+    # SGE SPECIFIC
+    def runSGE(self):
         # get guess profile
         cfgfile = self.guessProfile()
         # do some checks specific to SGE (may change pars)
@@ -348,13 +348,13 @@ class ParametricJob(PRMSet):
         file.write("#$ -binding linear:%d\n" %  nbCores)
         #else:
         #    file.write("#$ -binding linear:1\n") # set affinity even for a single core job
-        if self.pars['QUEUE'].val!='':    
+        if self.pars['QUEUE'].val!='':
             file.write("#$ -q %s\n" % self.pars['QUEUE'].val)
-        if self.pars['MEMORY'].val!='':    
+        if self.pars['MEMORY'].val!='':
             file.write("#$ -l h_vmem=%sM\n" % self.pars['MEMORY'].val)
-        if self.pars['TIME'].val!='':    
+        if self.pars['TIME'].val!='':
             file.write("#$ -l h_rt=%s\n" % self.pars['TIME'].val)
-            
+
         if self.pars['SGEARGS'].val!='':
             file.write("#$ %s\n" % self.pars['SGEARGS'].val)
         import socket
@@ -376,16 +376,16 @@ class ParametricJob(PRMSet):
             sgeId = m.group(1)
             if m:
                 cfgFileName, cfgFileExtension = os.path.splitext(self.cfgfile)
-                os.system("cp %s %s%s%s"%(self.cfgfile, cfgFileName, sgeId, cfgFileExtension))                
+                os.system("cp %s %s%s%s"%(self.cfgfile, cfgFileName, sgeId, cfgFileExtension))
                 self.qDelScript(sgeId)
                 print "\tuse 'qstat -f -j %s' to check the status of your job" % sgeId
                 print "\tuse 'qdel %s' to kill your job" % sgeId
                 print "\tuse './%s' to get results from node disk" % self.cpNodeResultsScriptName(sgeId)
                 print "\tuse './%s' to clean results from node disk" % self.rmNodeResultsScriptName(sgeId)
-                print "\tuse './qDel%s.py' to kill your job, get results and clean node disk" % sgeId            
+                print "\tuse './qDel%s.py' to kill your job, get results and clean node disk" % sgeId
         sys.exit()
 
-    def qDelScriptName(self, jobId):        
+    def qDelScriptName(self, jobId):
         filename = "qDel%s.py"%jobId
         return filename
 
@@ -402,33 +402,33 @@ class ParametricJob(PRMSet):
         localWSpace = localNodeDir+os.sep+'*'
         file.write("if os.path.isfile('%s'):\n"%(self.cpNodeResultsScriptName(jobId)))
         file.write("\toutCp = subprocess.call('./%s', shell=True)\n"%(self.cpNodeResultsScriptName(jobId)))
-        file.write("\tif outCp != 0:\n")        
-        file.write("\t\tprint 'Error copying files from node %s'\n"%nodeHost)        
+        file.write("\tif outCp != 0:\n")
+        file.write("\t\tprint 'Error copying files from node %s'\n"%nodeHost)
         file.write("\t\tprint '\tget them using %s script '\n"%self.cpNodeResultsScriptName(jobId))
         file.write("\t\tprint '\tthen clean the remote disk using %s script '\n"%self.rmNodeResultsScriptName(jobId))
         file.write("\t\tsys.exit(1)\n")
-        file.write("\telse:\n")     
-        file.write("\t\tos.remove('./%s')\n"%(self.cpNodeResultsScriptName(jobId)))                                    
+        file.write("\telse:\n")
+        file.write("\t\tos.remove('./%s')\n"%(self.cpNodeResultsScriptName(jobId)))
         file.write("if os.path.isfile('%s'):\n"%(self.rmNodeResultsScriptName(jobId)))
-        file.write("\toutRm = subprocess.call('./%s', shell=True)\n"%(self.rmNodeResultsScriptName(jobId)))        
-        file.write("\tif outCp != 0:\n")        
-        file.write("\t\tprint 'Error deleting files from node %s'\n"%nodeHost)        
+        file.write("\toutRm = subprocess.call('./%s', shell=True)\n"%(self.rmNodeResultsScriptName(jobId)))
+        file.write("\tif outCp != 0:\n")
+        file.write("\t\tprint 'Error deleting files from node %s'\n"%nodeHost)
         file.write("\t\tprint '\ttry cleaning them using %s script '\n"%self.rmNodeResultsScriptName(jobId))
-        file.write("\t\tprint '\tand only if it do not work, clean disk by hand!!!'\n")    
-        file.write("\t\tsys.exit(1)\n")   
-        file.write("\telse:\n")     
+        file.write("\t\tprint '\tand only if it do not work, clean disk by hand!!!'\n")
+        file.write("\t\tsys.exit(1)\n")
+        file.write("\telse:\n")
         file.write("\t\tos.remove('./%s')\n"%(self.rmNodeResultsScriptName(jobId)))
         #
         file.write("os.remove('./%s')\n"%(filename))
-        file.write("sys.exit(0)\n")                            
+        file.write("sys.exit(0)\n")
         file.close()
-        os.chmod(filename,0700)                            
-    # END OF SGE SPECIFIC 
+        os.chmod(filename,0700)
+    # END OF SGE SPECIFIC
     #===========================================================================
     # SLURM SPECIFIC INTERFACE
-    def runSlurm(self):  
+    def runSlurm(self):
         # get guess profile
-        cfgfile = self.guessProfile()      
+        cfgfile = self.guessProfile()
         # build script
         scriptname="runSlurm.sh"
         file = open(scriptname,"w")
@@ -439,7 +439,7 @@ class ParametricJob(PRMSet):
         file.write("#SBATCH --job-name=metafor\n")
         file.write("#SBATCH --mail-user=%s\n"%self.pars['MAIL_ADDR'].val)
         file.write("#SBATCH --mail-type=ALL\n")
-        #file.write("#SBATCH --output=%s\n"%self.getOutFileName())        
+        #file.write("#SBATCH --output=%s\n"%self.getOutFileName())
         file.write("# Ressources needed...\n")
         file.write("#SBATCH --partition=%s\n"%self.pars['QUEUE'].val)
         nbCores = (int(self.pars['NB_TASKS'].val) * int(self.pars['NB_THREADS'].val))
@@ -450,8 +450,8 @@ class ParametricJob(PRMSet):
         #file.write("#SBATCH --mem-bind=verbose,local\n")
         #file.write("echo \"SLURM_JOB_ID = $SLURM_JOB_ID\"\n")
         #file.write("echo 'squeue'\n")
-        import socket        
-        file.write(". %s %s\n" % (cfgfile, socket.gethostname()))        
+        import socket
+        file.write(". %s %s\n" % (cfgfile, socket.gethostname()))
         file.write("srun %s -x -i $SLURM_JOB_ID \n" % (sys.argv[0]))
         file.close()
         os.chmod(scriptname,0700)
@@ -470,16 +470,16 @@ class ParametricJob(PRMSet):
             slurmId = m.group(1)
             if m:
                 cfgFileName, cfgFileExtension = os.path.splitext(self.cfgfile)
-                os.system("cp %s %s%s%s"%(self.cfgfile, cfgFileName, slurmId, cfgFileExtension))                
+                os.system("cp %s %s%s%s"%(self.cfgfile, cfgFileName, slurmId, cfgFileExtension))
                 self.sCancelScript(slurmId)
                 print "\tuse ' squeue -l -j %s ' to check the status of the SLURM scheduling queue of your job" % slurmId
                 print "\tuse ' sprio -l -j %s ' to check the factor priority of your job" % slurmId
                 print "\tuse ' sstat  -a --format=JobID,NTasks,MaxRSS,MaxVMSize -j %s ' to get information about your running job (adapt format to your needs)" % slurmId
-                print "\tuse ' scancel %s ' to kill your job" % slurmId                
+                print "\tuse ' scancel %s ' to kill your job" % slurmId
                 print "\tuse ' sacct --format=JobID,NTasks,NCPUS,CPUTime,Elapsed,MaxRSS,MaxVMSize -j %s ' to get information about your finished job (adapt format to your needs)" % slurmId
         sys.exit()
-   
-    def sCancelScriptName(self, jobId):        
+
+    def sCancelScriptName(self, jobId):
         filename = "sCancel%s.py"%jobId
         return filename
 
@@ -488,7 +488,7 @@ class ParametricJob(PRMSet):
         file=open(filename,"w")
         file.write("#!/usr/bin/env python\n")
         file.write("import subprocess, os, sys\n")
-        file.write("subprocess.call('scancel %s',shell=True)\n"%jobId)             
+        file.write("subprocess.call('scancel %s',shell=True)\n"%jobId)
         # localDisk Clean
         if self.pars['LOCALDISK'].val :
             homeDir=os.getcwd()
@@ -497,41 +497,41 @@ class ParametricJob(PRMSet):
             localWSpace = localNodeDir+os.sep+'*'
             file.write("if os.path.isfile('%s'):\n"%(self.cpNodeResultsScriptName(jobId)))
             file.write("\toutCp = subprocess.call('./%s', shell=True)\n"%(self.cpNodeResultsScriptName(jobId)))
-            file.write("\tif outCp != 0:\n")        
-            file.write("\t\tprint 'Error copying files from node %s'\n"%nodeHost)        
+            file.write("\tif outCp != 0:\n")
+            file.write("\t\tprint 'Error copying files from node %s'\n"%nodeHost)
             file.write("\t\tprint '\tget them using %s script '\n"%self.cpNodeResultsScriptName(jobId))
             file.write("\t\tprint '\tthen clean the remote disk using %s script '\n"%self.rmNodeResultsScriptName(jobId))
             file.write("\t\tsys.exit(1)\n")
-            file.write("\telse:\n")     
-            file.write("\t\tos.remove('./%s')\n"%(self.cpNodeResultsScriptName(jobId)))                                    
+            file.write("\telse:\n")
+            file.write("\t\tos.remove('./%s')\n"%(self.cpNodeResultsScriptName(jobId)))
             file.write("if os.path.isfile('%s'):\n"%(self.rmNodeResultsScriptName(jobId)))
-            file.write("\toutRm = subprocess.call('./%s', shell=True)\n"%(self.rmNodeResultsScriptName(jobId)))        
-            file.write("\tif outCp != 0:\n")        
-            file.write("\t\tprint 'Error deleting files from node %s'\n"%nodeHost)        
+            file.write("\toutRm = subprocess.call('./%s', shell=True)\n"%(self.rmNodeResultsScriptName(jobId)))
+            file.write("\tif outCp != 0:\n")
+            file.write("\t\tprint 'Error deleting files from node %s'\n"%nodeHost)
             file.write("\t\tprint '\ttry cleaning them using %s script '\n"%self.rmNodeResultsScriptName(jobId))
-            file.write("\t\tprint '\tand only if it do not work, clean disk by hand!!!'\n")    
-            file.write("\t\tsys.exit(1)\n")   
-            file.write("\telse:\n")     
+            file.write("\t\tprint '\tand only if it do not work, clean disk by hand!!!'\n")
+            file.write("\t\tsys.exit(1)\n")
+            file.write("\telse:\n")
             file.write("\t\tos.remove('./%s')\n"%(self.rmNodeResultsScriptName(jobId)))
-        # clean sCancelScript           
+        # clean sCancelScript
         file.write("os.remove('./%s')\n"%(filename))
-        file.write("sys.exit(0)\n")                            
+        file.write("sys.exit(0)\n")
         file.close()
-        os.chmod(filename,0700)                  
+        os.chmod(filename,0700)
     # END OF SLURM SPECIFIC INTERFACE
     #===========================================================================
-                
+
     # interface virtuelle...
     def run(self, sgeId=0):
         print "run : not implemented"
     def setDefaultPars(self):
         print "setDefaultPars : not implemented"
-    def configActions(self):        
-        print "configActions : not implemented"  
-    def applyDependencies(self):   
+    def configActions(self):
+        print "configActions : not implemented"
+    def applyDependencies(self):
         print "applyDependencies : not implemented"
-          
-    def go(self):        
+
+    def go(self):
         self.savePars()
         print "go in %s" % self.pars['RUNMETHOD'].val
         if (self.pars['RUNMETHOD'].val == 'at' or
@@ -542,10 +542,10 @@ class ParametricJob(PRMSet):
         elif  self.pars['RUNMETHOD'].val == 'slurm':
             self.runSlurm()
         else:
-            self.run()      
-            
+            self.run()
+
 # fonctions utilitaires pour moveLocalDir2Home
-def recCmp(cmp):         
+def recCmp(cmp):
     copyOk = True
     #print "cmp.left = ", cmp.left
     if len(cmp.left_only) != 0:# on a des fichiers manquants ou différents
@@ -559,22 +559,22 @@ def recCmp(cmp):
         #if not copyOk : faire un break pour limiter le calcul
             #return copyOk
     return copyOk
-    
-def rmCommonFiles(cmp):     
+
+def rmCommonFiles(cmp):
     #print "cmp.left = ", cmp.left
     for subdir in cmp.subdirs:
         os.chdir(subdir)
         subDirCmp = cmp.subdirs[subdir]
-        rmCommonFiles(subDirCmp)  # recursive function 
+        rmCommonFiles(subDirCmp)  # recursive function
         print "fileToBeRemoved in %s: "%os.getcwd()
         for f in subDirCmp.common_files:
             print f
-            os.remove(f)                    
+            os.remove(f)
         os.chdir('..')
         if os.path.isempty(subdir):
-            os.rmdir(subdir)      
-                  
-# -- Misc Utilities --        
+            os.rmdir(subdir)
+
+# -- Misc Utilities --
 def getUsername():
     if os.environ.has_key('USER'):
         return os.environ['USER']
@@ -610,11 +610,11 @@ def all_files(root, patterns, skips, single_level, yield_folders):
                     for skip in skips:
                         if fnmatch.fnmatch(fullname, skip):
                             ok=False
-                    if ok:        
+                    if ok:
                         yield fullname
                         break
         if single_level:
-            break  
+            break
 
 def dos2unix( roots, patterns ):
     """ example: dos2unix([ 'copra5' ], '*.CPE;*.CRE')
@@ -622,8 +622,8 @@ def dos2unix( roots, patterns ):
     print "dos2unix: analysing %s" % patterns
     for root in roots:
         print "\t=> processing %s" % root
-        for file in all_files(root, patterns, '.svn', 
-                              single_level=False, yield_folders=False):  
+        for file in all_files(root, patterns, '.svn',
+                              single_level=False, yield_folders=False):
             fromfile = os.path.abspath(file)
             cmd='dos2unix %s' % fromfile
             #print cmd

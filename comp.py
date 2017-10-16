@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8; -*-
 #
-# Script "comp.py": 
+# Script "comp.py":
 #  - compilation de Metafor
 #  - lancement automatique de la batterie
 
@@ -20,14 +20,14 @@ class GitRepo(Repo):
     def co_cmd(self):
         cmd = "git clone --quiet %s %s" % (self.url, self.name)
         return cmd
-        
+
 class SVNRepo(Repo):
     def __init__(self, name, url):
         super(SVNRepo, self).__init__(name, url)
     def co_cmd(self):
         cmd = "svn co --quiet %s %s" % (self.url, self.name)
         return cmd
-                 
+
 # -- CompJob class -------------------------------------------------------------
 
 class CompJob(ParametricJob):
@@ -36,16 +36,16 @@ class CompJob(ParametricJob):
     def __init__(self,  _jobId=''):
         # init base class
         self.jobId = _jobId
-        cfgfile = "comp%s.cfg" % self.jobId            
+        cfgfile = "comp%s.cfg" % self.jobId
         ParametricJob.__init__(self, cfgfile)
-        
+
         # list of required repositories
         self.repos = []
         self.repos.append(SVNRepo('oo_meta', 'svn+ssh://blueberry.ltas.ulg.ac.be/home/metafor/SVN/oo_meta/trunk'))
         self.repos.append(SVNRepo('oo_nda', 'svn+ssh://blueberry.ltas.ulg.ac.be/home/metafor/SVN/oo_nda/trunk'))
         self.repos.append(GitRepo('linuxbin', 'https://github.com/ulgltas/linuxbin.git'))
-        self.repos.append(GitRepo('parasolid', 'blueberry.ltas.ulg.ac.be:/home/metafor/GIT/parasolid.git'))    
-              
+        self.repos.append(GitRepo('parasolid', 'blueberry.ltas.ulg.ac.be:/home/metafor/GIT/parasolid.git'))
+
         self.loadPars() # RB: semble inutile: deja fait dans classe de base PRMSet??
 
     def setDefaultPars(self):
@@ -57,48 +57,48 @@ class CompJob(ParametricJob):
         TextPRM(self.pars,  'CMAKELIST',  'build options',           "%s.cmake" % socket.gethostbyaddr(socket.gethostname())[0].split('.')[0])
         YesNoPRM(self.pars, 'DEBUG_MODE', 'debug mode',              False)
 
-        TextPRM(self.pars,  'NICE_VALUE',   'nice value', "0")   
+        TextPRM(self.pars,  'NICE_VALUE',   'nice value', "0")
         TextPRM(self.pars,  'NB_TASKS',     'nb of task launched in parallel', "1")
-        TextPRM(self.pars,  'NB_THREADS',   'nb of threads by task', "1")     
+        TextPRM(self.pars,  'NB_THREADS',   'nb of threads by task', "1")
 
         MultiPRM(self.pars, 'RUNMETHOD',    'Run Method', ["interactive", "at", "batch"], "batch")
-        TextPRM(self.pars,  'AT_TIME' ,     'Delay for at launch (no syntax check, use with care)', "now")    
-                
+        TextPRM(self.pars,  'AT_TIME' ,     'Delay for at launch (no syntax check, use with care)', "now")
+
         MultiPRM(self.pars, 'UNZIP',     'source', ["zip", "checkout", "present"], "zip")
         YesNoPRM(self.pars, 'COMPILE',   'compile', True)
         MultiPRM(self.pars, 'BATTERY',   'battery', [True, False, "continue"], True)
-        
-        PRMAction(self.actions, 'a', self.pars['MAIL_ADDR']) 
-        PRMAction(self.actions, 'b', self.pars['ARC_NAME']) 
-        PRMAction(self.actions, 'c', self.pars['CMAKELIST']) 
+
+        PRMAction(self.actions, 'a', self.pars['MAIL_ADDR'])
+        PRMAction(self.actions, 'b', self.pars['ARC_NAME'])
+        PRMAction(self.actions, 'c', self.pars['CMAKELIST'])
         PRMAction(self.actions, 'd', self.pars['DEBUG_MODE'])
 
         PRMAction(self.actions, 'h', self.pars['NICE_VALUE'])
         PRMAction(self.actions, 'j', self.pars['NB_TASKS'])
         PRMAction(self.actions, 'k', self.pars['NB_THREADS'])
-        
+
         PRMAction(self.actions, 'm', self.pars['RUNMETHOD'])
         # AT paramters
         PRMAction(self.actions, 'n', self.pars['AT_TIME'])
-        # Actions        
+        # Actions
         NoAction(self.actions)
-        PRMAction(self.actions, '1', self.pars['UNZIP']) 
-        PRMAction(self.actions, '2', self.pars['COMPILE']) 
-        PRMAction(self.actions, '3', self.pars['BATTERY']) 
-        
-        NoAction  (self.actions) 
-        GoAction  (self.actions, 'G') 
-        SaveAction(self.actions, 'S') 
+        PRMAction(self.actions, '1', self.pars['UNZIP'])
+        PRMAction(self.actions, '2', self.pars['COMPILE'])
+        PRMAction(self.actions, '3', self.pars['BATTERY'])
+
+        NoAction  (self.actions)
+        GoAction  (self.actions, 'G')
+        SaveAction(self.actions, 'S')
         QuitAction(self.actions, 'Q')
-        
+
     def configActions(self):
         self.pars['ARC_NAME'].enable(self.pars['UNZIP'].val=="zip")
         self.pars['NB_TASKS'].enable(self.pars['COMPILE'].val==True or self.pars['BATTERY'].val!=False)
         self.pars['NB_THREADS'].enable(self.pars['COMPILE'].val==True or self.pars['BATTERY'].val!=False)
         self.pars['CMAKELIST'].enable(self.pars['COMPILE'].val==True)
         self.pars['DEBUG_MODE'].enable(self.pars['COMPILE'].val==True)
-        self.pars['NICE_VALUE'].enable(self.pars['BATTERY'].val!=False and self.pars['RUNMETHOD'].val!='sge')        
-        # Batch        
+        self.pars['NICE_VALUE'].enable(self.pars['BATTERY'].val!=False and self.pars['RUNMETHOD'].val!='sge')
+        # Batch
         self.pars['AT_TIME'].enable(self.pars['RUNMETHOD'].val=='at')
 
     def touchFiles(self):
@@ -112,9 +112,9 @@ class CompJob(ParametricJob):
         for repo in self.repos:
             if not os.path.isdir(repo.name):
                 print 'checking out "%s" from %s...' % (repo.name, repo.url)
-                cmd = repo.co_cmd()   
+                cmd = repo.co_cmd()
                 os.system(cmd)
-                                
+
     def doClean(self):
         dirs = [ repo.name for repo in self.repos ]
         dirs.append('oo_metaB')
@@ -139,7 +139,7 @@ class CompJob(ParametricJob):
             cmd = 'unzip %s "*/.svn/*" >/dev/null' % file
             sysOutput = os.system(cmd)
             if (sysOutput != 0):
-                self.error("unable to unzip archive %s !" % file)         
+                self.error("unable to unzip archive %s !" % file)
             # convert some text files (if zip "text compression" was disabled)
             dos2unix([ repo.name for repo in self.repos ], '*.txt;*.CPE;*.CRE;*.stp;*.l;*.y;*.dat')
 
@@ -147,7 +147,7 @@ class CompJob(ParametricJob):
             tar = tarfile.open(os.path.expanduser(file),'r:gz')
             for tarinfo in tar:
                 tar.extract(tarinfo)
-            tar.close()          
+            tar.close()
         else:
             self.error("archive %s of unknown extension!" % file)
 
@@ -181,7 +181,7 @@ class CompJob(ParametricJob):
         ncpu = int(self.pars['NB_TASKS'].val) * int(self.pars['NB_THREADS'].val)
         print 'compiling %s using %s cpu(s) (have a coffee)' % (exe, ncpu)
         os.system('make -j %d %s >compile.log 2>&1' % (ncpu, dflag))
-        # check exe 
+        # check exe
         if os.path.isfile(exe) and os.access(exe, os.X_OK):
             msg='compilation of %s OK' % exe
             print msg
@@ -190,7 +190,7 @@ class CompJob(ParametricJob):
             msg='compilation of %s FAILED' % exe
             self.error(msg, 'compile.log')
         os.chdir('..')
-   
+
     def compile(self):
         self.compileMETAFOR()
 
@@ -198,7 +198,7 @@ class CompJob(ParametricJob):
         os.chdir('oo_metaB/bin')
         print "cleaning old results"
         os.system("python battery.py clean >/dev/null 2>&1")
-        os.chdir('../..') 
+        os.chdir('../..')
 
     def startBat(self):
         now = datetime.datetime.now()
@@ -206,8 +206,8 @@ class CompJob(ParametricJob):
         os.chdir('oo_metaB/bin')
         cmd="nice -%s python battery.py -j %s -k %s >battery.log 2>&1" % (self.pars['NICE_VALUE'].val, self.pars['NB_TASKS'].val, self.pars['NB_THREADS'].val)
         p = subprocess.Popen(cmd, shell=True)
-        p.wait()        
-        # finish script   
+        p.wait()
+        # finish script
         now = datetime.datetime.now()
         print "battery completed at %s" % now.ctime()
         self.mailmsg("battery complete", file='battery.log')
@@ -225,14 +225,14 @@ class CompJob(ParametricJob):
         self.mailHtmlAsAttachement(file, "html report")
         print "file %s sent as attachement ..." % file
         os.chdir('../..')
-        
+
     def getJobName(self):
         return os.path.basename(os.getcwd())+".battery"
 
-    def run(self):        
+    def run(self):
         # kill script that kills running tree
-        self.killScript(self.jobId, os.getpgrp()) 
-        
+        self.killScript(self.jobId, os.getpgrp())
+
         if self.pars['UNZIP'].val=="checkout":
             self.doClean()
             self.checkOut()
@@ -241,7 +241,7 @@ class CompJob(ParametricJob):
             self.doUnzip()
             self.checkOut() # only missing folders
             self.touchFiles()
-            
+
         if self.pars['COMPILE'].val:
             self.compile()
 
@@ -254,14 +254,14 @@ class CompJob(ParametricJob):
 
         if os.path.isfile("kill%s.py" % self.jobId):
             os.remove("kill%s.py" % self.jobId)
-            
+
         if (self.pars['RUNMETHOD'].val == 'at' or
               self.pars['RUNMETHOD'].val == 'batch'):
             if os.path.isfile("atrm%s.py" % self.jobId):
                 os.remove("atrm%s.py" % self.jobId)
             if os.path.isfile(self.cfgfile):
-                os.remove(self.cfgfile)   
-                
+                os.remove(self.cfgfile)
+
         print "done."
 
 
@@ -270,7 +270,7 @@ class CompJob(ParametricJob):
 if __name__ == "__main__":
 
     try:
-        import signal  
+        import signal
         signal.signal(signal.SIGBREAK, sigbreak);
     except:
         pass
@@ -292,16 +292,16 @@ if __name__ == "__main__":
 
     if options.rundir:
         os.chdir(options.rundir)
-        
+
     #print "options.jobId = %s"% options.jobId
-    job = CompJob(options.jobId)    
-    
+    job = CompJob(options.jobId)
+
     if options.usegui:
         job.menu()
     else:
         job.run()
-        
 
 
-            
-            
+
+
+

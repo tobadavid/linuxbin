@@ -10,72 +10,72 @@ try:
     # enable path completion in raw_input()
     import readline
     # enleve le "/" qui empeche la completion de repertoires
-    readline.set_completer_delims(' \t\n`~!@#$%^&*()-=+[{]}\\|;:\'",<>?') 
+    readline.set_completer_delims(' \t\n`~!@#$%^&*()-=+[{]}\\|;:\'",<>?')
     readline.parse_and_bind("tab: complete")
 except:
-    pass  
-    
-    
+    pass
+
+
 class PRMSet(object):
     """ Set of parameters linked to actions
         This class can also load/save its state from/to disk
     """
-    def __init__(self, cfgfile, _verb=False):    
+    def __init__(self, cfgfile, _verb=False):
         self.debug   = _verb
         self.pars    = {}
         self.actions = []
         self.cfgfile = cfgfile
         self.setDefaultPars()
         self.loadPars()
- 
+
     def setDebug(self, _verb=True):
-        self.debug = _verb      
- 
+        self.debug = _verb
+
     def printPars(self):
         for k,v in self.pars.items():
             print ("pars['%s'].val=%s\n" % (k,repr(v.val)) )
-                   
+
     def loadPaths(self):
         return [os.path.abspath('.')]
-        
+
     def savePath(self):
-        return os.path.abspath('.') 
-           
+        return os.path.abspath('.')
+
     def savePars(self, pth=None):
         if pth==None:
             pth  = self.savePath()
         fname = os.path.join(pth, self.cfgfile)
-        file = open(fname,"w")        
+        file = open(fname,"w")
         for k,v in self.pars.items():
             file.write("self.pars['%s'].val=%s\n" % (k,repr(v.val)) )
-        file.close()  
-                  
+        file.close()
+
     def loadPars(self): # lecture dans les chemins par defaut
-        for pth in self.loadPaths():      
+        for pth in self.loadPaths():
             fname = os.path.join(pth, self.cfgfile)
             if  (os.path.isfile(fname)):
                 file = open(fname,"r")
-                if file:                    
-                    cmds = file.readlines() 
+                if file:
+                    cmds = file.readlines()
                     for cmd in cmds:
                         try:
                             exec cmd
                         except:
                             pass
                 file.close()
-                break                
-            
+                break
+
     def setDefaultPars(self):  # RB: inutile - d'autant plus que ca ne declanche aucune exception
         print "PureVirtual Class PRMSet"
-        
+
     def applyDependencies(self):
         # no dependencies
-        return 
-        
+        return
+
     def configActions(self):
         # no actions to configure
-        return 
-        
+        return
+
     def menu(self):  # RB: est ce utile?? redefini dans classes derivees...
         msg=""
         while True:
@@ -86,7 +86,7 @@ class PRMSet(object):
                 if act.enabled():
                     act.disp()
             print msg.rjust(78)
-            print "Your choice?",  
+            print "Your choice?",
             c = getch()
             #print c,
             if c!='':
@@ -96,11 +96,11 @@ class PRMSet(object):
                     action.execute(self)
                     msg=""
                 elif len(acts)==0:
-                    msg="action is disabled or not found (command='%s')!"%c                    
+                    msg="action is disabled or not found (command='%s')!"%c
                 else:
                     msg= "%d actions found (command='%s')!" % (len(acts),c)
-            self.applyDependencies()  
-            
+            self.applyDependencies()
+
 # -- Parameters Classes --
 class PRM(object):
     """ Base class for a given parameter
@@ -112,34 +112,34 @@ class PRM(object):
         self.val     = self.typecheck(defval)
         set[key]     = self
         self.enabled = True
-        
-    def typecheck(self, val): 
-        pass 
-        
+
+    def typecheck(self, val):
+        pass
+
     def enable(self, cond):
         self.enabled = cond
-        
+
 class TextPRM(PRM):
     def __init__(self, set, key, desc, defval):
         PRM.__init__(self, set, key, desc, defval)
-        
+
     def input(self):
         cls()
         print "%s [def=%s]:" % (self.desc, self.defval)
         self.val = self.typecheck(raw_input())
-        
+
     def typecheck(self, val):
         if type(val)!=str:
             return ""
-        return val    
+        return val
 
 class YesNoPRM(PRM):
     def __init__(self, set, key, desc, defval):
         PRM.__init__(self, set, key, desc, defval)
-        
+
     def input(self):
         self.val = not self.val
-        
+
     def typecheck(self, val):
         if type(val)==bool:
             return val
@@ -152,13 +152,13 @@ class MultiPRM(PRM):
     def __init__(self, set, key, desc, vals, defval):
         self.vals = vals
         PRM.__init__(self, set, key, desc, defval)
-        
+
     def input(self):
         i = self.vals.index(self.val)
         i = i+1
         if i>=len(self.vals): i=0
-        self.val = self.vals[i] 
-        
+        self.val = self.vals[i]
+
     def typecheck(self, val):
         if val in self.vals:
             return val
@@ -174,7 +174,7 @@ class Action(object):
     def disp(self): pass
     def execute(self,job): pass
     def enabled(self): return True
-      
+
 class PRMAction(Action):
     def __init__(self, set, key, prm):
         Action.__init__(self, set, key)
@@ -189,13 +189,13 @@ class PRMAction(Action):
             ext = repr(self.prm.val)
         print " %s/ %s : %s" % (self.key, self.prm.desc.ljust(35,' '), ext)
     def enabled(self): return self.prm.enabled
-        
+
 class NoAction(Action):
     def __init__(self, set):
         Action.__init__(self, set, '')
     def disp(self):
         print
-        
+
 class QuitAction(Action):
     def __init__(self, set, key):
         Action.__init__(self, set, key)
@@ -203,7 +203,7 @@ class QuitAction(Action):
         sys.exit()
     def disp(self):
         print " %s/ QUIT" % self.key
-        
+
 class GoAction(Action):
     def __init__(self, set, key):
         Action.__init__(self, set, key)
@@ -212,7 +212,7 @@ class GoAction(Action):
         sys.exit()
     def disp(self):
         print " %s/ GO" % self.key
-        
+
 class SaveAction(Action):
     def __init__(self, set, key):
         Action.__init__(self, set, key)
@@ -220,9 +220,9 @@ class SaveAction(Action):
         job.savePars()
     def disp(self):
         print " %s/ SAVE" % self.key
-        
 
-        
+
+
 # ----- from http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/134892
 class _Getch(object):
     """Gets a single character from standard input.  Does not echo to the
@@ -234,7 +234,7 @@ screen."""
             self.impl = _GetchUnix()
 
     def __call__(self): return self.impl()
-    
+
 class _GetchUnix(object):
     def __init__(self):
         import tty, sys
@@ -249,36 +249,36 @@ class _GetchUnix(object):
         finally:
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
         return ch
-        
+
 class _GetchWindows(object):
     def __init__(self):
         import msvcrt
     def __call__(self):
         import msvcrt
         return msvcrt.getch()
-        
+
 # -- variable globale --
 getch = _Getch()
 
-#------------------------------------------------------------------------------  
+#------------------------------------------------------------------------------
 
-# copied from oo_meta/toolbox/pyutils.py   
+# copied from oo_meta/toolbox/pyutils.py
 def isUnix():
     uname = platform.uname()
     return not (uname[0] == 'Windows' or uname[2] == 'Windows')
 
-# copied from linuxbin/parametricJob.py  
+# copied from linuxbin/parametricJob.py
 def cls():
     uname = platform.uname()
     if uname[0] == 'Windows':
         os.system("CLS")
     else:
         os.system("clear")
-        
+
 def sigbreak(sig, arg):
     print "SIG-BREAK!"
     sys.exit()
 
 def quit():   # RB: ou cette fct est-elle utilisée????
     sys.exit()
-                 
+
